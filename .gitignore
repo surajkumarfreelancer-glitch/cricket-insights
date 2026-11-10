@@ -1,0 +1,10 @@
+pipeline/*.zip
+pipeline/ipl/
+pipeline/t20i/
+pipeline/odi/
+pipeline/test/
+pipeline/out_*.parquet
+pipeline/people.csv
+pipeline/player_styles.csv
+pipeline/__pycache__/
+site/data/

@@ -1,0 +1,83 @@
+name: Update and publish
+
+on:
+  schedule:
+    - cron: '17 1 * * *'   # every day at 06:47 IST
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['site/**', 'pipeline/**', '.github/workflows/**']
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        run: pip install pandas pyarrow
+
+      - name: Download Cricsheet ball-by-ball data
+        working-directory: pipeline
+        run: |
+          for pair in ipl:ipl_json t20i:t20s_json odi:odis_json test:tests_json; do
+            key=${pair%%:*}; file=${pair##*:}
+            curl -fsSL --retry 4 -o $file.zip https://cricsheet.org/downloads/$file.zip
+            rm -rf $key && mkdir $key && unzip -q $file.zip -d $key
+          done
+          curl -fsSL --retry 4 -o people.csv https://cricsheet.org/register/people.csv
+
+      - name: Refresh bowling styles (1st of each month, or manual run)
+        working-directory: pipeline
+        run: |
+          if [ "$(date -u +%d)" = "01" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python fetch_styles.py || echo "style refresh failed, keeping old styles"
+          fi
+
+      - name: Build stats and pages
+        working-directory: pipeline
+        env:
+          SITE_DIR: ../site
+        run: |
+          python styles.py
+          python parse.py
+          python build_site.py
+
+      - name: Save refreshed styles
+        run: |
+          git config user.name "cricket-insights-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add pipeline/wiki_styles.json pipeline/wiki_titles.json
+          git diff --cached --quiet || (git commit -m "Refresh player styles" && git push)
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
