@@ -49,6 +49,12 @@ jobs:
             python fetch_styles.py || echo "style refresh failed, keeping old styles"
           fi
 
+      - name: Parse ball-by-ball data
+        working-directory: pipeline
+        run: |
+          python styles.py
+          python parse.py
+
       - name: Same-day India scorecards (CricketData.org free plan)
         working-directory: pipeline
         env:
@@ -59,10 +65,7 @@ jobs:
         working-directory: pipeline
         env:
           SITE_DIR: ../site
-        run: |
-          python styles.py
-          python parse.py
-          python build_site.py
+        run: python build_site.py
 
       - name: Save refreshed styles
         run: |

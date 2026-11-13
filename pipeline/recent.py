@@ -10,7 +10,7 @@ KEY = os.environ.get('CRICKETDATA_API_KEY', '').strip()
 CACHE = 'recent_cache.json'
 TEAM = 'India'
 TYPES = {'odi': 'ODI', 't20': 'T20I', 'test': 'Test'}
-MAX_SCORECARDS_PER_RUN = 4
+MAX_SCORECARDS_PER_RUN = 3  # trial-mode scorecards cost 10 hits each
 DAYS_BACK = 30
 
 def call(endpoint, **params):
@@ -45,9 +45,38 @@ def series_span(srs):
         en = en.replace(year=st.year + 1)
     return st, en
 
+def infer_type(m):
+    t = (m.get('matchType') or '').lower()
+    if t in TYPES:
+        return t
+    nm = m.get('name') or ''
+    if 'ODI' in nm: return 'odi'
+    if 'T20' in nm: return 't20'
+    if 'Test' in nm: return 'test'
+    return None
+
 def is_target(m):
     teams = m.get('teams') or []
-    return TEAM in teams and m.get('matchType') in TYPES and len(teams) == 2
+    if TEAM in teams and len(teams) == 2 and infer_type(m):
+        m['matchType'] = infer_type(m)
+        return True
+    return False
+
+def in_cricsheet():
+    """(date, team pair) of every match Cricsheet already has, so no hits are spent on them."""
+    have = set()
+    try:
+        import pandas as pd
+        for k in ('t20i', 'odi', 'test'):
+            p = f'out_{k}_matches.parquet'
+            if os.path.exists(p):
+                m = pd.read_parquet(p, columns=['date', 'team1', 'team2'])
+                for r in m.itertuples():
+                    for dd in (-1, 0, 1):
+                        have.add(((pd.Timestamp(r.date) + pd.Timedelta(days=dd)).strftime('%Y-%m-%d'), frozenset((r.team1, r.team2))))
+    except Exception as e:
+        print('cricsheet check skipped', e)
+    return have
 
 def main():
     if not KEY:
@@ -98,8 +127,13 @@ def main():
     def ended(m):
         st = (m.get('status') or '').lower()
         return bool(m.get('matchEnded')) or any(k in st for k in (' won ', ' won by', 'tied', 'drawn', 'no result', 'abandoned'))
+    have = in_cricsheet()
+    for c in cache.values():
+        m = c.get('match', {})
+        c['in_cricsheet'] = (m.get('date'), frozenset(m.get('teams') or [])) in have
     todo = [mid for mid, c in cache.items()
-            if ended(c.get('match', {})) and not c.get('final') and c.get('tries', 0) < 5]
+            if ended(c.get('match', {})) and not c.get('final') and not c.get('in_cricsheet') and c.get('tries', 0) < 5]
+    print('scorecards to fetch:', [cache[x]['match'].get('name') for x in todo])
     todo.sort(key=lambda mid: cache[mid]['match'].get('date') or '', reverse=True)
     for mid in todo[:MAX_SCORECARDS_PER_RUN]:
         c = cache[mid]
