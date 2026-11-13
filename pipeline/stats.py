@@ -2,12 +2,15 @@
 import sys, json
 import pandas as pd, numpy as np
 
-KEY = {'ipl': 'IPL', 't20i': 'T20I', 'odi': 'ODI', 'test': 'Test'}
+KEY = {'ipl': 'IPL', 't20i': 'T20I', 'odi': 'ODI', 'test': 'Test', 't20i_w': 'Women T20I', 'odi_w': 'Women ODI', 'test_w': 'Women Test'}
 BOWLER_WKTS = {'bowled', 'caught', 'lbw', 'stumped', 'caught and bowled', 'hit wicket'}
 MIN_MATCHES = {'IPL': 5, 'T20I': 5, 'ODI': 5, 'Test': 3}
 MIN_BALLS_BAT = {'IPL': 100, 'T20I': 100, 'ODI': 300, 'Test': 600}
 MIN_BALLS_BOWL = {'IPL': 180, 'T20I': 180, 'ODI': 300, 'Test': 600}
 MIN_VS_TYPE = {'IPL': 48, 'T20I': 48, 'ODI': 90, 'Test': 180}
+for _d in (MIN_MATCHES, MIN_BALLS_BAT, MIN_BALLS_BOWL, MIN_VS_TYPE):
+    for _f in ('T20I', 'ODI', 'Test'):
+        _d['Women ' + _f] = _d[_f]
 
 def r1(x):
     return None if x is None or pd.isna(x) or np.isinf(x) else round(float(x), 1)
@@ -35,55 +38,81 @@ def periods(m):
     return {'All years': m.date.min(), 'Last 10 years': last - pd.DateOffset(years=10),
             'Last 5 years': last - pd.DateOffset(years=5)}
 
+def base(fmt):
+    return 'T20' if ('T20' in fmt or fmt == 'IPL') else ('ODI' if 'ODI' in fmt else 'Test')
+
+def i0(x):
+    return None if x is None or pd.isna(x) else int(x)
+
 def venue_summary(m, d, fmt):
+    """One row per ground and period. Denominator for win % = decided matches (a side won);
+    ties, no results and draws are counted separately. Score averages skip shortened games and no results."""
     rows = []
-    lim = fmt != 'Test'
-    wk_all = d[d.bowler_wkt == 1]
-    SPIN_BASE[fmt] = (wk_all.bowl_group == 'Spin').sum() / max((wk_all.bowl_group != 'Unknown').sum(), 1) * 100
+    test = base(fmt) == 'Test'
+    wk_all = d[(d.bowler_wkt == 1) & (d.bowl_group != 'Unknown')]
+    SPIN_BASE[fmt] = (wk_all.bowl_group == 'Spin').mean() * 100 if len(wk_all) else 33
     for pname, start in periods(m).items():
         mm = m[m.date >= start]
         for v, g in mm.groupby('venue'):
             if len(g) < MIN_MATCHES[fmt]:
                 continue
-            res = g[g.winner.notna()]
+            dec = g[g.winner.notna()]
+            w1 = int((dec.winner == dec.bat_first).sum()); w2 = len(dec) - w1
             r = dict(Period=pname, Venue=v, City=g.city.mode().iat[0] if g.city.notna().any() else None,
-                     Matches=len(g), First=g.date.min().date(), Last=g.date.max().date())
-            if lim:
-                clean = g[g.method.isna() & g.winner.notna()]
-                full1 = clean  # 1st innings full value
-                r['Avg 1st inns'] = r1(full1.inn1_runs.mean())
-                r['Avg 2nd inns'] = r1(clean.inn2_runs.mean())
-                r['Median 1st inns'] = r1(full1.inn1_runs.median())
-                r['Highest'] = int(g[['inn1_runs', 'inn2_runs']].max().max())
-                r['Lowest completed 1st inns'] = int(full1.inn1_runs.min()) if len(full1) else None
-                bf_win = (res.winner == res.bat_first).mean() * 100 if len(res) else None
-                r['Bat 1st win %'] = r1(bf_win)
-                r['Chase win %'] = r1(100 - bf_win) if bf_win is not None else None
-                r['Avg wkts 1st inns'] = r1(full1.inn1_wkts.mean())
-                r['Avg wkts 2nd inns'] = r1(clean.inn2_wkts.mean())
-                chase = clean[clean.winner != clean.bat_first]
-                r['Highest chase'] = int(chase.inn2_runs.max()) if len(chase) else None
-                r['Lowest total defended'] = int(clean[clean.winner == clean.bat_first].inn1_runs.min()) if (clean.winner == clean.bat_first).any() else None
+                     Matches=len(g), First=g.date.min().date(), Last=g.date.max().date(),
+                     Decided=len(dec), **{'Won bat 1st': w1, 'Won bat 2nd': w2},
+                     Ties=int((g.result == 'tie').sum()), **{'No results': int((g.result == 'no result').sum())},
+                     Draws=int((g.result == 'draw').sum()),
+                     **{'Bat 1st win %': r1(w1 / len(dec) * 100) if len(dec) else None,
+                        'Bat 2nd win %': r1(w2 / len(dec) * 100) if len(dec) else None})
+            if test:
+                r['Bat 1st win % (all)'] = r1(w1 / len(g) * 100)
+                r['Draw %'] = r1(r['Draws'] / len(g) * 100)
+                for i, nm in zip(range(1, 5), ['1st', '2nd', '3rd', '4th']):
+                    col = g[f'inn{i}_runs'] if f'inn{i}_runs' in g else pd.Series(dtype=float)
+                    r[f'Avg {nm} inns'] = r1(col.mean()); r[f'{nm} inns sample'] = int(col.notna().sum())
+                    r[f'Highest {nm} inns'] = i0(col.max())
+                    r[f'Avg wkts {nm} inns'] = r1(g[f'inn{i}_wkts'].mean()) if f'inn{i}_wkts' in g else None
+                cols = [c for c in ['inn1_runs', 'inn2_runs', 'inn3_runs', 'inn4_runs'] if c in g]
+                r['Highest total'] = i0(g[cols].max().max())
+                if 'inn4_team' in g:
+                    ch = g[g.inn4_team.notna() & (g.winner == g.inn4_team)]
+                    r['Highest chase'] = i0(ch.inn4_runs.max()) if len(ch) else None
+                    r['Successful 4th-inns chases'] = len(ch)
+                    r['Highest 4th-inns target'] = i0(g.inn4_target.max()) if 'inn4_target' in g else None
+                r['Follow-ons'] = int(g.follow_on.sum()) if 'follow_on' in g else 0
+                r['Declarations'] = int(sum(g[c].fillna(False).astype(bool).sum() for c in ['inn1_dec', 'inn2_dec', 'inn3_dec', 'inn4_dec'] if c in g))
+                r['Score sample'] = len(g)
             else:
-                for i in range(1, 5):
-                    r[f'Avg {i} inns'] = r1(g[f'inn{i}_runs'].mean())
-                r['Bat 1st win %'] = r1((g.winner == g.bat_first).mean() * 100)
-                r['Bat 2nd win %'] = r1(((g.winner.notna()) & (g.winner != g.bat_first)).mean() * 100)
-                r['Draw %'] = r1((g.result == 'draw').mean() * 100)
+                ok = g[~g.shortened.fillna(False) & (g.result != 'no result')]
+                r['Score sample'] = len(ok)
+                for i, nm in [(1, '1st'), (2, '2nd')]:
+                    r[f'Avg {nm} inns'] = r1(ok[f'inn{i}_runs'].mean())
+                    r[f'Median {nm} inns'] = r1(ok[f'inn{i}_runs'].median())
+                    r[f'Highest {nm} inns'] = i0(g[f'inn{i}_runs'].max())
+                    r[f'Avg wkts {nm} inns'] = r1(ok[f'inn{i}_wkts'].mean())
+                r['Highest total'] = i0(g[['inn1_runs', 'inn2_runs']].max().max())
+                ch = ok[ok.winner.notna() & (ok.winner != ok.bat_first)]
+                r['Highest chase'] = i0(ch.inn2_runs.max()) if len(ch) else None
+                df_ = ok[ok.winner == ok.bat_first]
+                r['Lowest total defended'] = i0(df_.inn1_runs.min()) if len(df_) else None
+                r['Shortened (excluded)'] = int(g.shortened.fillna(False).sum())
             tw = g[g.toss_winner.notna() & g.winner.notna()]
             r['Toss winner wins %'] = r1((tw.toss_winner == tw.winner).mean() * 100) if len(tw) else None
             r['Toss: chose to bat %'] = r1((g.toss_decision == 'bat').mean() * 100)
             dv = d[(d.venue == v) & (d.date >= start)]
             wk = dv[dv.bowler_wkt == 1]
-            tot = (wk.bowl_group != 'Unknown').sum()
+            tot = int((wk.bowl_group != 'Unknown').sum())
+            r['Styled wkts'] = tot
             r['Pace wkt %'] = r1((wk.bowl_group == 'Pace').sum() / tot * 100) if tot else None
             r['Spin wkt %'] = r1((wk.bowl_group == 'Spin').sum() / tot * 100) if tot else None
             for grp in ['Pace', 'Spin']:
                 x = dv[dv.bowl_group == grp]
-                balls = (x.legal).sum()
-                r[f'{grp} econ'] = r1(x.runs_total.sum() / balls * 6) if balls else None
-                w = x.bowler_wkt.sum()
-                r[f'{grp} avg'] = r1(x.runs_total.sum() / w) if w else None
+                balls = x.legal.sum(); w = x.bowler_wkt.sum(); runs = x.runs_total.sum()
+                r[f'{grp} econ'] = r1(runs / balls * 6) if balls else None
+                r[f'{grp} SR'] = r1(balls / w) if w else None
+                r[f'{grp} avg'] = r1(runs / w) if w else None
+                r[f'{grp} balls'] = int(balls)
             ty = dv[dv.bowl_type != 'Unknown'].groupby('bowl_type').agg(b=('legal', 'sum'), w=('bowler_wkt', 'sum'))
             ty = ty[(ty.b >= 0.06 * ty.b.sum()) & (ty.w >= 5)]
             if len(ty):
@@ -97,21 +126,21 @@ def venue_summary(m, d, fmt):
     return pd.DataFrame(rows).sort_values(['Period', 'Matches'], ascending=[True, False])
 
 SPIN_BASE = {}
+HI = {'IPL': 180, 'T20I': 165, 'ODI': 280, 'Test': 380, 'Women T20I': 140, 'Women ODI': 240, 'Women Test': 300}
+LO = {'IPL': 155, 'T20I': 130, 'ODI': 230, 'Test': 300, 'Women T20I': 110, 'Women ODI': 190, 'Women Test': 220}
 def pitch_read(r, fmt):
     tags = []
     s = r.get('Spin wkt %')
-    base = SPIN_BASE.get(fmt, 33)
+    b = SPIN_BASE.get(fmt, 33)
     if s is None: tags.append('Bowler styles unknown')
-    elif s >= base + 8: tags.append('Spin friendly')
-    elif s <= base - 8: tags.append('Pace friendly')
+    elif s >= b + 8: tags.append('Spin friendly')
+    elif s <= b - 8: tags.append('Pace friendly')
     else: tags.append('Balanced pace/spin')
-    a = r.get('Avg 1st inns') if fmt != 'Test' else r.get('Avg 1 inns')
-    hi = {'IPL': 180, 'T20I': 165, 'ODI': 280, 'Test': 380}[fmt]
-    lo = {'IPL': 155, 'T20I': 130, 'ODI': 230, 'Test': 300}[fmt]
+    a = r.get('Avg 1st inns')
     if a:
-        tags.append('High scoring' if a >= hi else ('Low scoring' if a <= lo else 'Par scoring'))
-    c = r.get('Chase win %')
-    if c is not None:
+        tags.append('High scoring' if a >= HI[fmt] else ('Low scoring' if a <= LO[fmt] else 'Par scoring'))
+    c = r.get('Bat 2nd win %')
+    if c is not None and base(fmt) != 'Test' and r.get('Decided', 0) >= 5:
         tags.append('Chasing ground' if c >= 57 else ('Defending ground' if c <= 43 else 'No toss edge'))
     return ', '.join(tags)
 
@@ -119,20 +148,28 @@ def venue_phase(m, d, fmt):
     rows = []
     for pname, start in periods(m).items():
         x = d[d.date >= start]
+        if base(fmt) != 'Test':  # shortened (rain/DLS) and no-result games distort stage averages
+            bad = set(m[m.shortened.fillna(False) | (m.result == 'no result')].match_id)
+            x = x[~x.match_id.isin(bad)]
         keep = x.groupby('venue').match_id.nunique()
         x = x[x.venue.isin(keep[keep >= MIN_MATCHES[fmt]].index)]
-        inn = x.innings.clip(upper=4 if fmt == 'Test' else 2)
-        g = x.assign(inn=inn).groupby(['venue', 'inn', 'phase'])
+        inn = x.innings.clip(upper=4 if base(fmt) == 'Test' else 2)
+        x = x.assign(inn=inn)
+        full = x.groupby(['venue', 'inn', 'phase', 'match_id']).legal.sum().reset_index()
+        full['len'] = full.phase.str.extract(r'(\d+)-(\d+)').astype(float).pipe(lambda e: (e[1] - e[0] + 1) * 6)
+        full = (full.legal >= full.len).groupby([full.venue, full.inn, full.phase]).sum().rename('full').reset_index()
+        g = x.groupby(['venue', 'inn', 'phase'])
         a = g.agg(matches=('match_id', 'nunique'), runs=('runs_total', 'sum'), balls=('legal', 'sum'),
                   wkts=('wicket', 'sum'), fours=('four', 'sum'), sixes=('six', 'sum'), dots=('dot', 'sum')).reset_index()
         sp = x[x.bowler_wkt == 1].assign(inn=inn).groupby(['venue', 'inn', 'phase', 'bowl_group']).size().unstack(fill_value=0)
         a = a.merge(sp.reset_index(), on=['venue', 'inn', 'phase'], how='left').fillna(0)
+        a = a.merge(full, on=['venue', 'inn', 'phase'], how='left')
         a['Period'] = pname
         rows.append(a)
     a = pd.concat(rows)
     out = pd.DataFrame({
         'Period': a.Period, 'Venue': a.venue, 'Innings': a.inn, 'Phase': a.phase,
-        'Innings sampled': a.matches,
+        'Innings sampled': a.matches, 'Full stages': a.full.fillna(0).astype(int),
         'Avg runs in phase': (a.runs / a.matches).round(1),
         'Run rate': (a.runs / a.balls * 6).round(2),
         'Avg wkts in phase': (a.wkts / a.matches).round(2),
@@ -303,11 +340,13 @@ def team_venue(m, fmt):
         out.append(dict(Venue=v, Team=team, Played=len(g), Won=int(g.won.sum()), **{'Win %': r1(g.won.mean() * 100)},
                         **{'Batting 1st P': len(f), 'Batting 1st W': int(f.won.sum()),
                            'Batting 2nd P': len(s), 'Batting 2nd W': int(s.won.sum())}))
+    if not out:
+        return pd.DataFrame(columns=['Venue', 'Team', 'Played', 'Won', 'Win %', 'Batting 1st P', 'Batting 1st W', 'Batting 2nd P', 'Batting 2nd W'])
     return pd.DataFrame(out).sort_values(['Venue', 'Played'], ascending=[True, False])
 
 def match_log(m, fmt):
     cols = ['date', 'event', 'venue', 'city', 'team1', 'team2', 'toss_winner', 'toss_decision', 'bat_first']
-    for i in range(1, 5 if fmt == 'Test' else 3):
+    for i in range(1, 5 if base(fmt) == 'Test' else 3):
         cols += [f'inn{i}_team', f'inn{i}_runs', f'inn{i}_wkts']
     cols += ['winner', 'result', 'win_by_runs', 'win_by_wkts', 'method', 'match_id']
     x = m[[c for c in cols if c in m]].copy().sort_values('date', ascending=False)

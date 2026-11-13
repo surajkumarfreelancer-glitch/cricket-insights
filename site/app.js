@@ -9,8 +9,9 @@ const getJSON = async (p) => (cache[p] ??= fetch('data/' + p).then((r) => { if (
 const app = $('#app');
 const charts = [];
 const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const PHASE_ORDER = (a, b) => (parseInt((a.match(/\((\d+)/) || [])[1]) || 0) - (parseInt((b.match(/\((\d+)/) || [])[1]) || 0);
-const FORMATS = ['IPL', 'T20I', 'ODI', 'Test'];
+const PHASE_ORDER = (a, b) => (parseInt((a.match(/(\d+)-\d+/) || [])[1]) || 0) - (parseInt((b.match(/(\d+)-\d+/) || [])[1]) || 0);
+const FORMATS = ['IPL', 'T20I', 'ODI', 'Test', 'Women T20I', 'Women ODI', 'Women Test'];
+const isTest = (f) => /Test/.test(f || '');
 const isSpin = (t) => /spin|orthodox/i.test(t || '');
 
 function chart(canvas, cfg) {
@@ -192,7 +193,7 @@ async function ground(id, fmt, per) {
   const pers = ['Last 5 years', 'Last 10 years', 'All years'].filter((p) => F.periods[p]);
   per = pers.includes(per) ? per : pers[0];
   const P = F.periods[per], S = P.summary;
-  const test = fmt === 'Test';
+  const test = isTest(fmt);
   app.innerHTML = `<h1>${esc(G.name)}</h1><p class="sub">${esc(G.city || '')} · ${F.matches} ${fmt} matches, ${dt(F.first)} to ${dt(F.last)}</p><div id="ft"></div>
     <div class="seg" id="per">${pers.map((p) => `<button class="${p === per ? 'on' : ''}" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div><div id="body"></div>`;
   $('#ft').appendChild(formatTabs(fmts, fmt, (f) => { location.hash = `#/g/${id}/${f}`; }));
@@ -200,13 +201,27 @@ async function ground(id, fmt, per) {
   const mw = P.most_wkts_phase;
   const bt = (P.btypes || []).slice().sort((a, b) => b.Wickets - a.Wickets);
   const phases = (P.phases || []).slice().sort((a, b) => a.Innings - b.Innings || PHASE_ORDER(a.Phase, b.Phase));
-  let h = `<div class="cards" style="margin-top:14px">
-    ${card('Matches', S.Matches)}
-    ${test ? card('Avg 1st inns', f1(S['Avg 1 inns'])) + card('Avg 2nd inns', f1(S['Avg 2 inns'])) + card('Avg 3rd inns', f1(S['Avg 3 inns'])) + card('Avg 4th inns', f1(S['Avg 4 inns'])) : card('Avg 1st inns', f1(S['Avg 1st inns'])) + card('Avg 2nd inns', f1(S['Avg 2nd inns'])) + card('Highest', S.Highest) + card('Highest chase', S['Highest chase'] ?? '–')}
-    ${card('Bat 1st win %', f1(S['Bat 1st win %']))}${card(test ? 'Bat 2nd win %' : 'Chase win %', f1(test ? S['Bat 2nd win %'] : S['Chase win %']))}${test ? card('Draw %', f1(S['Draw %'])) : ''}
-    ${card('Toss winner wins %', f1(S['Toss winner wins %']))}${card('Pace wkts %', f1(S['Pace wkt %']))}${card('Spin wkts %', f1(S['Spin wkt %']))}
-    ${card('Pace economy', f2(S['Pace econ']))}${card('Spin economy', f2(S['Spin econ']))}
+  const v = (x, f = f1) => (x === null || x === undefined ? '–' : f(x));
+  const inn = test ? ['1st', '2nd', '3rd', '4th'] : ['1st', '2nd'];
+  let h = `<h2>Results</h2><div class="cards">
+    ${card('Matches', S.Matches)}${card('Decided (a side won)', S.Decided)}${card('Won batting 1st', S['Won bat 1st'])}${card('Won batting 2nd', S['Won bat 2nd'])}
+    ${card('Bat 1st win %', v(S['Bat 1st win %']))}${card('Bat 2nd win %', v(S['Bat 2nd win %']))}
+    ${test ? card('Draws', S.Draws) + card('Draw %', v(S['Draw %'])) + card('Bat 1st win % of all', v(S['Bat 1st win % (all)'])) : ''}
+    ${card('Ties', S.Ties)}${card('No results', S['No results'])}${card('Toss winner wins %', v(S['Toss winner wins %']))}</div>
+    <p class="note">Win % = wins ÷ decided matches (${S.Decided}). Ties, no results${test ? ' and draws' : ''} are left out of that denominator and counted separately.${test ? ' "Bat 1st win % of all" divides by all matches instead, draws included.' : ''}</p>
+    <h2>Innings scores</h2><div class="cards">
+    ${inn.map((n) => card(`Avg ${n} inns`, v(S[`Avg ${n} inns`]))).join('')}
+    ${inn.map((n) => card(`Highest ${n} inns`, v(S[`Highest ${n} inns`], (x) => x))).join('')}
+    ${card('Highest total', v(S['Highest total'], (x) => x))}${card(test ? 'Highest 4th-inns chase won' : 'Highest chase won', v(S['Highest chase'], (x) => x))}
+    ${test ? card('Successful 4th-inns chases', v(S['Successful 4th-inns chases'], (x) => x)) + card('Follow-ons', S['Follow-ons']) + card('Declarations', S.Declarations) : card('Lowest total defended', v(S['Lowest total defended'], (x) => x))}</div>
+    <p class="note">${test ? `Each average uses every innings played (1st inns: ${S['1st inns sample']}, 2nd: ${S['2nd inns sample']}, 3rd: ${S['3rd inns sample']}, 4th: ${S['4th inns sample']}). Declared innings count at their declared score.` : `Averages use ${S['Score sample']} full-length matches; ${S['Shortened (excluded)'] ?? 0} rain-shortened (DLS or reduced-overs) games and no results are left out. Highest totals use every match.`}</p>
+    <h2>Pace vs spin</h2><div class="cards">
+    ${card('Pace share of wkts %', v(S['Pace wkt %']))}${card('Spin share of wkts %', v(S['Spin wkt %']))}
+    ${card('Pace economy', v(S['Pace econ'], f2))}${card('Spin economy', v(S['Spin econ'], f2))}
+    ${card('Pace strike rate', v(S['Pace SR']))}${card('Spin strike rate', v(S['Spin SR']))}
+    ${card('Pace average', v(S['Pace avg']))}${card('Spin average', v(S['Spin avg']))}
     ${card('Best bowler type', S['Best bowler type'] || '–', 'wide')}${card('Pitch read', S['Pitch read'] || '–', 'wide')}</div>
+    <p class="note">Strike rate = balls per wicket. Average = runs conceded per wicket. Share counts only wickets credited to the bowler (not run outs), out of ${S['Styled wkts']} such wickets where the bowler's style is known. Pace bowled ${S['Pace balls'] ?? 0} balls here, spin ${S['Spin balls'] ?? 0}.</p>
     ${mw ? `<div class="callout">Most wickets fall in the <b>${esc(mw.phase)}</b> phase (${f1(mw.share)}% of all wickets here). ${Object.entries(mw.by_innings || {}).map(([i, p]) => `Innings ${i}: <b>${esc(p)}</b>`).join(' · ')}</div>` : ''}
     <div class="grid2">
       ${box('Average 1st and 2nd innings score by year', canv('c-yr'))}
@@ -214,7 +229,7 @@ async function ground(id, fmt, per) {
       ${box('Runs and wickets by phase', canv('c-ph'), 'Average per innings in each phase.')}
       ${box('Batting first win % by year', canv('c-bf'))}
     </div>
-    <h2>Phase by phase</h2>${box('', table([{ h: 'Inns', k: 'Innings' }, { h: 'Phase', k: 'Phase', l: 1 }, { h: 'Sample', k: 'Innings sampled' }, { h: 'Avg runs', f: (r) => f1(r['Avg runs in phase']) }, { h: 'Run rate', f: (r) => f2(r['Run rate']) }, { h: 'Avg wkts', f: (r) => f2(r['Avg wkts in phase']) }, { h: 'Dot %', f: (r) => f1(r['Dot %']) }, { h: 'Boundary %', f: (r) => f1(r['Boundary %']) }, { h: 'Sixes', f: (r) => f2(r['Sixes per inns']) }, { h: 'Pace wkts', k: 'Pace wkts' }, { h: 'Spin wkts', k: 'Spin wkts' }], phases, { hl: (r) => mw && r.Phase === mw.phase }))}
+    <h2>Innings stages</h2>${box('', table([{ h: 'Inns', k: 'Innings' }, { h: 'Stage', k: 'Phase', l: 1 }, { h: 'Innings', k: 'Innings sampled' }, { h: 'Full', k: 'Full stages' }, { h: 'Avg runs', f: (r) => f1(r['Avg runs in phase']) }, { h: 'Run rate', f: (r) => f2(r['Run rate']) }, { h: 'Avg wkts', f: (r) => f2(r['Avg wkts in phase']) }, { h: 'Dot %', f: (r) => f1(r['Dot %']) }, { h: 'Boundary %', f: (r) => f1(r['Boundary %']) }, { h: 'Sixes', f: (r) => f2(r['Sixes per inns']) }, { h: 'Pace wkts', k: 'Pace wkts' }, { h: 'Spin wkts', k: 'Spin wkts' }], phases, { hl: (r) => mw && r.Phase === mw.phase }), `Historical averages per innings that reached each stage ("Innings"); "Full" = innings that batted the whole stage. Avg runs and wickets include innings that ended part-way through a stage; run rate uses every ball bowled in it.${test ? ' Test sessions by day are not shown: the free ball-by-ball data has no reliable day or session markers.' : ' Rain-shortened games and no results are left out.'}`)}
     <h2>Bowler types here</h2>${box('', table([{ h: 'Type', k: 'Bowler type', l: 1 }, { h: 'Wkts', k: 'Wickets' }, { h: 'Share %', f: (r) => f1(r['Share of wkts %']) }, { h: 'Balls/wkt', f: (r) => f1(r['Strike rate']) }, { h: 'Econ', f: (r) => f2(r.Economy) }, { h: 'Avg', f: (r) => f1(r.Average) }, { h: 'Bowled', k: 'Bowled' }, { h: 'LBW', k: 'LBW' }, { h: 'Caught', k: 'Caught' }, { h: 'Stumped', k: 'Stumped' }], bt), 'Lots of bowled and LBW means straight, full bowling works here; stumpings mean flight and turn.')}
     <div class="grid2" style="margin-top:16px">
       ${box('Top run scorers here (last 5 years)', table([{ h: 'Batter', l: 1, html: (r) => plink(r.name, r.batter_id) }, { h: 'Inns', k: 'inns' }, { h: 'Runs', k: 'runs' }, { h: 'Avg', f: (r) => f1(r.outs ? r.runs / r.outs : null) }, { h: 'SR', f: (r) => f1(r.runs / r.balls * 100) }], F.top_bat))}
@@ -268,7 +283,7 @@ async function match(id) {
       ${box('Top batters', table([{ h: 'Batter', l: 1, html: (r) => plink(r.batter, r.batter_id) }, { h: 'Team', k: 'team', l: 1 }, { h: 'R', k: 'runs' }, { h: 'B', k: 'balls' }, { h: '4s', k: 'fours' }, { h: '6s', k: 'sixes' }, { h: 'SR', f: (r) => f1(r.sr) }], M.top_bat))}
       ${box('Top bowlers', table([{ h: 'Bowler', l: 1, html: (r) => plink(r.bowler, r.bowler_id) }, { h: 'Team', k: 'team', l: 1 }, { h: 'O', k: 'overs' }, { h: 'R', k: 'runs' }, { h: 'W', k: 'wkts' }, { h: 'Econ', f: (r) => f2(r.econ) }], M.top_bowl))}
     </div>
-    ${M.lite ? `<div class="callout">Quick scorecard, added on match day. Over-by-over charts, phase stats and fall of wickets appear automatically once the full ball-by-ball data is published, usually within a few days.</div>` : M.fmt !== 'Test' ? `<div class="grid2" style="margin-top:16px">${box('Worm: runs as the innings went', canv('c-worm'))}${box('Runs per over (dots mark wickets)', canv('c-man'))}</div>` : `<div style="margin-top:16px">${box('Runs per over by innings', canv('c-man'))}</div>`}`;
+    ${M.lite ? `<div class="callout">Quick scorecard, added on match day. Over-by-over charts, phase stats and fall of wickets appear automatically once the full ball-by-ball data is published, usually within a few days.</div>` : !isTest(M.fmt) ? `<div class="grid2" style="margin-top:16px">${box('Worm: runs as the innings went', canv('c-worm'))}${box('Runs per over (dots mark wickets)', canv('c-man'))}</div>` : `<div style="margin-top:16px">${box('Runs per over by innings', canv('c-man'))}</div>`}`;
   M.innings.forEach((i) => {
     h += `<h2 class="innhead"><span>${esc(i.team)}, innings ${i.n}</span><span class="score">${i.runs}/${i.wkts} <span class="sub" style="font-size:14px">(${M.lite ? esc(i.overs_txt) : ov(i.balls)} ov${i.extras != null ? `, extras ${i.extras}` : ''})</span></span></h2>
       <div class="grid2">
@@ -287,6 +302,33 @@ async function match(id) {
   chart($('#c-man'), { type: 'bar', data: { labels, datasets: M.innings.map((i, k) => ({ label: `${i.team} (inns ${i.n})`, data: labels.map((o) => (i.overs.find((x) => x.over === o) || {}).runs ?? null), backgroundColor: cols[k] })).concat(M.innings.map((i, k) => ({ type: 'scatter', label: `${i.team} wickets`, data: i.overs.filter((x) => x.wkts).map((x) => ({ x: x.over - 1, y: x.runs + 1 })), backgroundColor: '#111', pointRadius: 4, showLine: false }))) }, options: { plugins: { legend: { labels: { filter: (l) => !/wickets$/.test(l.text) } } } } });
 }
 
+/* ----- methods & sources ----- */
+async function about() {
+  const meta = await getJSON('meta.json');
+  const rows = Object.entries(meta.formats);
+  const T = (label, st, note) => `<tr><td class="l">${esc(label)}</td><td class="l"><span class="pill ${st === 'Tracked' ? 'w' : st === 'Not available' ? 'l' : 'n'}">${esc(st)}</span></td><td class="how">${esc(note)}</td></tr>`;
+  app.innerHTML = `<h1>Methods and sources</h1><p class="sub">Last updated ${esc(meta.built)}. Men's and women's cricket are kept separate (IPL, T20I, ODI, Test, Women T20I, Women ODI, Women Test).</p>
+  <h2>Sources</h2>${box('', `<ul>${(meta.sources || []).map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>: ${esc(s.use)}</li>`).join('')}</ul>`)}
+  <h2>Data coverage</h2>${box('', table([{ h: 'Format', l: 1, f: (r) => r[0] }, { h: 'Matches', f: (r) => r[1].matches }, { h: 'From', f: (r) => dt(r[1].first) }, { h: 'Latest match', f: (r) => dt(r[1].last) }, { h: 'Decided', f: (r) => r[1].decided ?? '–' }, { h: 'Ties', f: (r) => r[1].ties ?? '–' }, { h: 'No results', f: (r) => r[1].no_results ?? '–' }, { h: 'Draws', f: (r) => r[1].draws ?? '–' }, { h: 'Shortened', f: (r) => r[1].shortened ?? '–' }, { h: 'Balls', f: (r) => n0(r[1].balls) }, { h: 'Bowler style known', f: (r) => (r[1].styled_balls_pct ?? '–') + '%' }], rows))}
+  <h2>What is tracked</h2>${box('', `<div class="scroll"><table><thead><tr><th>Statistic</th><th class="l">Status</th><th class="l">How it is calculated</th></tr></thead><tbody>
+    ${T('Matches played', 'Tracked', 'Every match in the data at that ground, format and period (all years, last 10, last 5).')}
+    ${T('Won batting first / second', 'Tracked', 'Counts of matches won by the side that batted first / second. In Tests the side batting first is whoever batted in innings 1, follow-ons included.')}
+    ${T('Batting first / second win %', 'Tracked', 'Wins ÷ decided matches (a side won). Ties, no results and draws are not in the denominator. Tests also show batting-first wins ÷ all matches.')}
+    ${T('Ties, draws, no results', 'Tracked', 'Counted from the official result. A tie settled by a super over is counted as a tie.')}
+    ${T('Average innings score (ODI/T20: 1st, 2nd)', 'Tracked', 'Mean total of full-length matches only; rain-shortened (DLS or reduced overs) games and no results are excluded. Tied games are included. A 2nd innings that ends early by winning counts at its final score.')}
+    ${T('Average innings score (Test: innings 1 to 4)', 'Tracked', 'Mean of every innings played, by match innings number. Declared innings count at the declared score; follow-on innings stay in their match innings slot (innings 3).')}
+    ${T('Highest innings total', 'Tracked', 'Highest single innings at the ground, any innings, any match.')}
+    ${T('Highest successful chase', 'Tracked', 'ODI/T20: highest 2nd-innings total by the winning chasing side in a full-length match. Test: highest 4th-innings total by a side that won batting 4th.')}
+    ${T('Pace vs spin: economy, strike rate, average, share', 'Tracked', 'Uses every ball by bowlers whose style is known. Economy = runs per 6 balls (all runs off the bat and extras on that ball). Strike rate = balls per wicket. Average = runs per wicket. Wickets exclude run outs.')}
+    ${T('Stages: T20 1-6, 7-15, 16-20', 'Tracked', 'Average runs, wickets and run rate per innings for each stage, split by 1st and 2nd innings.')}
+    ${T('Stages: ODI 1-10, 11-25, 26-40, 41-50', 'Tracked', 'As above.')}
+    ${T('Stages: Test 20-over blocks per innings', 'Tracked', 'Overs 1-20, 21-40, 41-60, 61-80 and every later 20-over block, split by innings 1 to 4.')}
+    ${T('Stages: Test sessions by day', 'Not available', 'The free ball-by-ball data does not record which day or session each ball was bowled in, so session figures cannot be calculated reliably.')}
+    ${T('Line and length of each ball', 'Not available', 'Ball-tracking data is only sold by paid providers.')}
+  </tbody></table></div>`)}
+  <h2>Sample sizes and minimums</h2>${box('', '<p>Every ground page shows how many matches, innings and wickets each figure is based on. Ground pages exist for every ground with at least one match; batter weakness lines need at least 48 balls against a bowler type in T20s, 90 in ODIs and 180 in Tests. Treat any figure from fewer than 10 matches as a hint, not a trend.</p>')}`;
+}
+
 /* ---------------- router ---------------- */
 async function route() {
   charts.splice(0).forEach((c) => c.destroy());
@@ -297,6 +339,7 @@ async function route() {
     else if (type === 'g') await ground(id, a, b);
     else if (type === 't') await team(id, a);
     else if (type === 'm') await match(id);
+    else if (type === 'about') await about();
     else await home();
     document.title = ($('h1')?.textContent || 'Cricket Insights') + ' · Cricket Insights';
   } catch (e) {

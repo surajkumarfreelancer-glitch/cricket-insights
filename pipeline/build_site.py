@@ -4,7 +4,7 @@ import pandas as pd, numpy as np
 import stats
 
 OUT = os.environ.get('SITE_DIR', 'site')
-KEYS = ['ipl', 't20i', 'odi', 'test']
+KEYS = os.environ.get('KEYS', 'ipl t20i odi test t20i_w odi_w test_w').split()
 FMT = stats.KEY
 BOWLER_WKTS = stats.BOWLER_WKTS
 stats.MIN_MATCHES.update({k: 1 for k in stats.MIN_MATCHES})  # every ground gets a page
@@ -118,7 +118,6 @@ def main():
         fmt = FMT[key]
         m, d = stats.load(key)
         m = m.sort_values('date')
-        lim = fmt != 'Test'
         # ---------- innings-level player tables ----------
         d['out_here'] = (d.player_out_id == d.batter_id).astype(int)
         bi = d.groupby(['match_id', 'innings', 'batter_id']).agg(
@@ -316,7 +315,10 @@ def main():
             players[pid]['formats'][fmt]['team'] = x.team.iat[-1]; players[pid]['formats'][fmt]['last_date'] = x.date.max().strftime('%Y-%m-%d')
         for pid, x in bw.groupby('bowler_id'):
             players[pid]['formats'][fmt].setdefault('team', x.team.iat[-1]); players[pid]['formats'][fmt].setdefault('last_date', x.date.max().strftime('%Y-%m-%d'))
-        built[fmt] = dict(matches=len(m), first=m.date.min().strftime('%Y-%m-%d'), last=m.date.max().strftime('%Y-%m-%d'))
+        built[fmt] = dict(matches=len(m), first=m.date.min().strftime('%Y-%m-%d'), last=m.date.max().strftime('%Y-%m-%d'),
+                          decided=int(m.winner.notna().sum()), ties=int((m.result == 'tie').sum()), no_results=int((m.result == 'no result').sum()),
+                          draws=int((m.result == 'draw').sum()), shortened=int(m.shortened.fillna(False).sum()), follow_ons=int(m.follow_on.sum()),
+                          balls=int(len(d)), styled_balls_pct=round(float((d.bowl_type != 'Unknown').mean() * 100), 1))
         print(fmt, 'done', flush=True)
     # ---------- write players, grounds, teams ----------
     for pid, P in players.items():
@@ -344,7 +346,10 @@ def main():
         index.append(dict(t='t', id=tid, n=T['name'], s=', '.join(f"{f} {v['played']}" for f, v in T['formats'].items()), w=sum(v['played'] for v in T['formats'].values())))
     add_recent(index)
     write('index.json', index)
-    write('meta.json', dict(built=pd.Timestamp.now('UTC').strftime('%Y-%m-%d %H:%M UTC'), formats=built))
+    write('meta.json', dict(built=pd.Timestamp.now('UTC').strftime('%Y-%m-%d %H:%M UTC'), formats=built,
+                            sources=[dict(name='Cricsheet ball-by-ball data (ODC-BY licence)', url='https://cricsheet.org', use='all matches, scores, results and every delivery'),
+                                     dict(name='Wikipedia / Wikidata player pages', url='https://www.wikidata.org', use='bowling style (pace/spin type), batting hand, full names'),
+                                     dict(name='CricketData.org free plan', url='https://cricketdata.org', use="same-day scorecards for India men's matches until Cricsheet publishes them")]))
     print('players', len(players), 'grounds', len(grounds), 'teams', len(teams), 'index', len(index))
 
 if __name__ == '__main__':

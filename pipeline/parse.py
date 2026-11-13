@@ -1,8 +1,14 @@
-"""Parse Cricsheet JSON (men's matches) into matches + deliveries parquet files per format."""
+"""Parse Cricsheet JSON into matches + deliveries parquet files per format (men's and women's kept separate)."""
 import json, glob, re, sys, os
 import pandas as pd
 
-FORMATS = {'ipl': 'IPL', 't20i': 'T20I', 'odi': 'ODI', 'test': 'Test'}
+# key: (folder, gender, label)
+FORMATS = {'ipl': ('ipl', 'male', 'IPL'), 't20i': ('t20i', 'male', 'T20I'), 'odi': ('odi', 'male', 'ODI'), 'test': ('test', 'male', 'Test'),
+           't20i_w': ('t20i', 'female', 'Women T20I'), 'odi_w': ('odi', 'female', 'Women ODI'), 'test_w': ('test', 'female', 'Women Test')}
+STD_OVERS = {'T20': 20, 'ODI': 50}
+
+def base(fmt):
+    return 'T20' if ('T20' in fmt or fmt == 'IPL') else ('ODI' if 'ODI' in fmt else 'Test')
 
 ALIAS = {  # fold common spelling variants of the same ground
     'M Chinnaswamy Stadium': 'M Chinnaswamy Stadium',
@@ -56,19 +62,24 @@ def clean_venue(v):
     return base
 
 def phase(fmt, over):  # over is 1-based
-    if fmt in ('IPL', 'T20I'):
+    b = base(fmt)
+    if b == 'T20':
         return 'Powerplay (1-6)' if over <= 6 else ('Middle (7-15)' if over <= 15 else 'Death (16-20)')
-    if fmt == 'ODI':
-        return 'Powerplay (1-10)' if over <= 10 else ('Middle (11-40)' if over <= 40 else 'Death (41-50)')
-    return 'New ball (1-20)' if over <= 20 else ('Old ball (21-80)' if over <= 80 else '2nd new ball (81+)')
+    if b == 'ODI':
+        if over <= 10: return 'Powerplay (1-10)'
+        if over <= 25: return 'Middle 1 (11-25)'
+        if over <= 40: return 'Middle 2 (26-40)'
+        return 'Death (41-50)'
+    lo = (over - 1) // 20 * 20 + 1
+    return f'Overs {lo}-{lo + 19}'
 
 def run(key):
-    fmt = FORMATS[key]
+    folder, gender, fmt = FORMATS[key]
     M, D = [], []
-    for f in glob.glob(f'{key}/*.json'):
+    for f in glob.glob(f'{folder}/*.json'):
         d = json.load(open(f, encoding='utf-8'))
         info = d['info']
-        if info.get('gender') != 'male':
+        if info.get('gender') != gender:
             continue
         mid = os.path.basename(f)[:-5]
         reg = info['registry']['people']
@@ -111,7 +122,8 @@ def run(key):
                                    player_out_id=reg.get(w['player_out']),
                                    fielder=(w.get('fielders') or [{}])[0].get('name'))
                     D.append(rec)
-            totals.append((bat, runs, wk, legal, inn.get('declared', False)))
+            totals.append((bat, runs, wk, legal, inn.get('declared', False), (inn.get('target') or {}).get('runs'),
+                           (inn.get('target') or {}).get('overs'), inn.get('forfeited', False)))
         rec = dict(match_id=mid, fmt=fmt, date=date, season=str(info.get('season')), venue=venue,
                    city=info.get('city'), event=info.get('event', {}).get('name'),
                    team1=teams[0] if teams else None, team2=teams[1] if len(teams) > 1 else None,
@@ -121,9 +133,15 @@ def run(key):
                    win_by_wkts=out.get('by', {}).get('wickets'),
                    overs_limit=info.get('overs'), pom=', '.join(info.get('player_of_match', [])),
                    stage=info.get('event', {}).get('stage') or (f"Match {info.get('event', {}).get('match_number')}" if info.get('event', {}).get('match_number') else None),
-                   n_inns=len(totals))
-        for i, (bat, r_, w_, l_, dec) in enumerate(totals[:4], 1):
+                   n_inns=len(totals), eliminator=out.get('eliminator'), bowl_out=out.get('bowl_out'))
+        std = STD_OVERS.get(base(fmt))
+        tov = [t[6] for t in totals if t[6]]
+        rec['shortened'] = bool(std and ((info.get('overs') or std) < std or any(x < std for x in tov) or out.get('method')))
+        # follow-on: same team bats 2nd and 3rd in a Test
+        rec['follow_on'] = bool(len(totals) >= 3 and totals[1][0] == totals[2][0])
+        for i, (bat, r_, w_, l_, dec, tgt, tov_, ff) in enumerate(totals[:4], 1):
             rec[f'inn{i}_dec'] = dec
+            rec[f'inn{i}_target'] = tgt
             rec[f'inn{i}_team'] = bat; rec[f'inn{i}_runs'] = r_; rec[f'inn{i}_wkts'] = w_; rec[f'inn{i}_balls'] = l_
         rec['bat_first'] = totals[0][0] if totals else None
         M.append(rec)
