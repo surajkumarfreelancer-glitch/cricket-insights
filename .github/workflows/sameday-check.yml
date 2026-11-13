@@ -1,0 +1,17 @@
+name: Same-day check (debug)
+on:
+  workflow_dispatch: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Look up India matches
+        working-directory: pipeline
+        env:
+          CRICKETDATA_API_KEY: ${{ secrets.CRICKETDATA_API_KEY }}
+          DEBUG_SERIES: '1'
+        run: python recent.py

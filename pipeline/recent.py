@@ -60,6 +60,8 @@ def main():
         for off in (0, 25, 50):
             j = call('series', offset=off, search=TEAM)
             data = (j.get('data') or []) if j.get('status') == 'success' else []
+            if os.environ.get('DEBUG_SERIES'):
+                print('raw series sample:', [(x.get('name'), x.get('startDate'), x.get('endDate')) for x in data[:25]], j.get('reason'))
             for srs in data:
                 nm = srs.get('name') or ''
                 if TEAM not in nm or any(x in nm for x in ('Women', ' A ', 'U19', 'Under', 'Legends', 'Masters')):
