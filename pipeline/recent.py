@@ -2,7 +2,7 @@
 
 Cricsheet stays the main source; this only fills the gap until Cricsheet publishes a match.
 Needs the CRICKETDATA_API_KEY secret. Without it, this script does nothing.
-Free plan: 100 hits/day. A normal day uses about 3 to 6 hits.
+Free plan: 100 hits/day. A normal day uses about 5 to 10 hits.
 """
 import os, json, datetime, urllib.request, urllib.parse
 
@@ -34,23 +34,38 @@ def main():
     cutoff = (datetime.date.today() - datetime.timedelta(days=DAYS_BACK)).isoformat()
     found = {}
     try:
-        for ep, offs in (('currentMatches', [0]), ('matches', [0, 25])):
-            for off in offs:
-                j = call(ep, offset=off)
-                if j.get('status') != 'success':
-                    print('list call failed:', j.get('reason') or j.get('status'))
-                    continue
-                for m in j.get('data') or []:
-                    if is_target(m) and (m.get('date') or '') >= cutoff:
-                        found[m['id']] = m
+        # 1) live/just-finished matches
+        j = call('currentMatches', offset=0)
+        for m in (j.get('data') or []) if j.get('status') == 'success' else []:
+            if is_target(m) and (m.get('date') or '') >= cutoff:
+                found[m['id']] = m
+        # 2) India's recent series (latest first) and every match in them
+        series = []
+        for off in (0, 25):
+            j = call('series', offset=off)
+            for srs in (j.get('data') or []) if j.get('status') == 'success' else []:
+                nm = srs.get('name') or ''
+                if TEAM in nm and 'Women' not in nm and ' A ' not in nm + ' ' and 'U19' not in nm:
+                    series.append(srs)
+        print('India series found:', [x.get('name') for x in series][:6])
+        for srs in series[:4]:
+            j = call('series_info', id=srs['id'], offset=0)
+            ml = ((j.get('data') or {}).get('matchList') or []) if j.get('status') == 'success' else []
+            for m in ml:
+                if is_target(m) and cutoff <= (m.get('date') or '') <= datetime.date.today().isoformat():
+                    found[m['id']] = m
     except Exception as e:
         print('list error', e)
+    print('India matches in window:', sorted((m.get('date'), m.get('name')) for m in found.values()))
     for mid, m in found.items():
         c = cache.setdefault(mid, {'tries': 0})
         c['match'] = {k: m.get(k) for k in ('id', 'name', 'matchType', 'status', 'venue', 'date', 'dateTimeGMT', 'teams', 'score', 'matchEnded', 'matchStarted')}
     # scorecards for finished matches we don't have yet (or that were still live last time)
+    def ended(m):
+        st = (m.get('status') or '').lower()
+        return bool(m.get('matchEnded')) or any(k in st for k in (' won ', ' won by', 'tied', 'drawn', 'no result', 'abandoned'))
     todo = [mid for mid, c in cache.items()
-            if c.get('match', {}).get('matchEnded') and not c.get('final') and c.get('tries', 0) < 5]
+            if ended(c.get('match', {})) and not c.get('final') and c.get('tries', 0) < 5]
     todo.sort(key=lambda mid: cache[mid]['match'].get('date') or '', reverse=True)
     for mid in todo[:MAX_SCORECARDS_PER_RUN]:
         c = cache[mid]
