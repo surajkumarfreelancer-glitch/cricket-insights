@@ -83,6 +83,8 @@ def main():
         for sid, (span, nm) in sorted(cands.items(), key=lambda kv: kv[1][0][1], reverse=True)[:5]:
             j = call('series_info', id=sid, offset=0)
             ml = ((j.get('data') or {}).get('matchList') or []) if j.get('status') == 'success' else []
+            if os.environ.get('DEBUG_SERIES'):
+                print('matchList', nm, [(x.get('date'), x.get('matchType'), x.get('teams'), x.get('name')) for x in ml])
             for m in ml:
                 if is_target(m) and cutoff <= (m.get('date') or '') <= today.isoformat():
                     found[m['id']] = m
