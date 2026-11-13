@@ -49,6 +49,59 @@ def how_out(r):
     if k == 'run out': return f"run out ({f})" if isinstance(f, str) else 'run out'
     return k
 
+def add_recent(index):
+    """Same-day India scorecards from CricketData.org, only for matches Cricsheet doesn't have yet."""
+    if not os.path.exists('recent_cache.json'):
+        return
+    from parse import clean_venue
+    cache = json.load(open('recent_cache.json', encoding='utf-8'))
+    have = {}
+    for e in index:
+        if e['t'] == 'm':
+            have.setdefault((e['n'].split(' vs ')[0], e['n'].split(' vs ')[-1]), []).append(e['d'])
+    fmt_of = {'odi': 'ODI', 't20': 'T20I', 'test': 'Test'}
+    added = 0
+    for mid, c in cache.items():
+        m = c.get('match') or {}
+        teams = m.get('teams') or []
+        if len(teams) != 2 or not m.get('date'):
+            continue
+        d = pd.Timestamp(m['date'])
+        days = {(d + pd.Timedelta(days=k)).strftime('%Y%m%d') for k in (-1, 0, 1)}
+        dates = have.get((teams[0], teams[1]), []) + have.get((teams[1], teams[0]), [])
+        if any(x in days for x in dates):
+            continue  # Cricsheet already has the full ball-by-ball version
+        fmt = fmt_of.get(m.get('matchType'), m.get('matchType'))
+        venue = clean_venue(m.get('venue') or '')
+        inns = []
+        for k, sc in enumerate(c.get('scorecard') or [], 1):
+            team = (sc.get('inning') or '').replace(' Inning 1', '').replace(' Inning 2', '').strip()
+            tot = sc.get('totals') or {}
+            bat = [dict(batter=(b.get('batsman') or {}).get('name'), runs=b.get('r'), balls=b.get('b'), fours=b.get('4s'), sixes=b.get('6s'),
+                        how=b.get('dismissal-text') or 'not out') for b in sc.get('batting') or []]
+            bowl = [dict(bowler=(b.get('bowler') or {}).get('name'), overs=b.get('o'), maidens=b.get('m'), runs=b.get('r'), wkts=b.get('w'), econ=b.get('eco')) for b in sc.get('bowling') or []]
+            inns.append(dict(n=k, team=team, runs=tot.get('R'), wkts=tot.get('W'), overs_txt=tot.get('O'), extras=(sc.get('extras') or {}).get('r'),
+                             bat=bat, bowl=bowl, overs=[], phases=[], fow=[]))
+        if not inns:  # list data only: innings totals
+            for k, s in enumerate(m.get('score') or [], 1):
+                inns.append(dict(n=k, team=(s.get('inning') or '').rsplit(' Inning', 1)[0], runs=s.get('r'), wkts=s.get('w'), overs_txt=s.get('o'),
+                                 extras=None, bat=[], bowl=[], overs=[], phases=[], fow=[]))
+        allbat = [dict(b, team=i['team']) for i in inns for b in i['bat']]
+        allbowl = [dict(b, team=next((t for t in teams if t != i['team']), '')) for i in inns for b in i['bowl']]
+        for b in allbat:
+            b['sr'] = round(b['runs'] / b['balls'] * 100, 1) if b.get('balls') else None
+        toss = c.get('toss') or [None, None]
+        rec = dict(id=f'cd-{mid}', lite=True, fmt=fmt, date=m['date'], event=m.get('name'), stage=None, venue=venue, gid=slug(venue),
+                   city=None, team1=teams[0], team2=teams[1], toss=f"{toss[0]} chose to {toss[1]}" if toss[0] else None,
+                   winner=c.get('winner'), result=m.get('status'), by_runs=None, by_wkts=None, method=None, pom=None, innings=inns,
+                   top_bat=sorted(allbat, key=lambda b: -(b.get('runs') or 0))[:5],
+                   top_bowl=sorted(allbowl, key=lambda b: (-(b.get('wkts') or 0), b.get('runs') or 0))[:5])
+        write(f'm/cd-{mid}.json', rec)
+        index.append(dict(t='m', id=f'cd-{mid}', n=f"{teams[0]} vs {teams[1]}",
+                          s=f"{fmt} · {d.strftime('%d %b %Y')} · {venue} · {m.get('status') or ''} · quick scorecard", d=d.strftime('%Y%m%d')))
+        added += 1
+    print('same-day matches added:', added)
+
 def main():
     if os.path.exists(os.path.join(OUT, 'data')):
         shutil.rmtree(os.path.join(OUT, 'data'))
@@ -289,6 +342,7 @@ def main():
     for tid, T in teams.items():
         write(f't/{tid}.json', T)
         index.append(dict(t='t', id=tid, n=T['name'], s=', '.join(f"{f} {v['played']}" for f, v in T['formats'].items()), w=sum(v['played'] for v in T['formats'].values())))
+    add_recent(index)
     write('index.json', index)
     write('meta.json', dict(built=pd.Timestamp.now('UTC').strftime('%Y-%m-%d %H:%M UTC'), formats=built))
     print('players', len(players), 'grounds', len(grounds), 'teams', len(teams), 'index', len(index))

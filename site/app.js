@@ -257,7 +257,7 @@ const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').repla
 /* ----- match ----- */
 async function match(id) {
   const M = await getJSON(`m/${id}.json`);
-  const result = M.winner ? `${M.winner} won${M.by_runs ? ` by ${M.by_runs} runs` : M.by_wkts ? ` by ${M.by_wkts} wickets` : ''}${M.method ? ` (${M.method})` : ''}` : (M.result || 'No result');
+  const result = M.lite && M.result ? M.result : M.winner ? `${M.winner} won${M.by_runs ? ` by ${M.by_runs} runs` : M.by_wkts ? ` by ${M.by_wkts} wickets` : ''}${M.method ? ` (${M.method})` : ''}` : (M.result || 'No result');
   const ov = (b) => `${Math.floor(b / 6)}.${b % 6}`;
   let h = `<h1>${esc(M.team1)} vs ${esc(M.team2)}</h1>
     <p class="sub">${esc([M.fmt, M.event, M.stage].filter(Boolean).join(' · '))} · ${dt(M.date)} · <a href="#/g/${esc(M.gid)}/${M.fmt}">${esc(M.venue)}</a></p>
@@ -268,17 +268,18 @@ async function match(id) {
       ${box('Top batters', table([{ h: 'Batter', l: 1, html: (r) => plink(r.batter, r.batter_id) }, { h: 'Team', k: 'team', l: 1 }, { h: 'R', k: 'runs' }, { h: 'B', k: 'balls' }, { h: '4s', k: 'fours' }, { h: '6s', k: 'sixes' }, { h: 'SR', f: (r) => f1(r.sr) }], M.top_bat))}
       ${box('Top bowlers', table([{ h: 'Bowler', l: 1, html: (r) => plink(r.bowler, r.bowler_id) }, { h: 'Team', k: 'team', l: 1 }, { h: 'O', k: 'overs' }, { h: 'R', k: 'runs' }, { h: 'W', k: 'wkts' }, { h: 'Econ', f: (r) => f2(r.econ) }], M.top_bowl))}
     </div>
-    ${M.fmt !== 'Test' ? `<div class="grid2" style="margin-top:16px">${box('Worm: runs as the innings went', canv('c-worm'))}${box('Runs per over (dots mark wickets)', canv('c-man'))}</div>` : `<div style="margin-top:16px">${box('Runs per over by innings', canv('c-man'))}</div>`}`;
+    ${M.lite ? `<div class="callout">Quick scorecard, added on match day. Over-by-over charts, phase stats and fall of wickets appear automatically once the full ball-by-ball data is published, usually within a few days.</div>` : M.fmt !== 'Test' ? `<div class="grid2" style="margin-top:16px">${box('Worm: runs as the innings went', canv('c-worm'))}${box('Runs per over (dots mark wickets)', canv('c-man'))}</div>` : `<div style="margin-top:16px">${box('Runs per over by innings', canv('c-man'))}</div>`}`;
   M.innings.forEach((i) => {
-    h += `<h2 class="innhead"><span>${esc(i.team)}, innings ${i.n}</span><span class="score">${i.runs}/${i.wkts} <span class="sub" style="font-size:14px">(${ov(i.balls)} ov, extras ${i.extras})</span></span></h2>
+    h += `<h2 class="innhead"><span>${esc(i.team)}, innings ${i.n}</span><span class="score">${i.runs}/${i.wkts} <span class="sub" style="font-size:14px">(${M.lite ? esc(i.overs_txt) : ov(i.balls)} ov${i.extras != null ? `, extras ${i.extras}` : ''})</span></span></h2>
       <div class="grid2">
         ${box('Batting', table([{ h: 'Batter', l: 1, html: (r) => plink(r.batter, r.batter_id) }, { h: '', k: 'how', cls: 'how' }, { h: 'R', k: 'runs' }, { h: 'B', k: 'balls' }, { h: '4s', k: 'fours' }, { h: '6s', k: 'sixes' }, { h: 'SR', f: (r) => f1(r.balls ? r.runs / r.balls * 100 : null) }], i.bat))}
         ${box('Bowling', table([{ h: 'Bowler', l: 1, html: (r) => plink(r.bowler, r.bowler_id) }, { h: 'O', k: 'overs' }, { h: 'M', k: 'maidens' }, { h: 'R', k: 'runs' }, { h: 'W', k: 'wkts' }, { h: 'Econ', f: (r) => f2(r.econ) }, { h: 'Dots', k: 'dots' }], i.bowl))}
-        ${box('Phase by phase', table([{ h: 'Phase', k: 'phase', l: 1 }, { h: 'Runs', k: 'runs' }, { h: 'Wkts', k: 'wkts' }, { h: 'Run rate', f: (r) => f2(r.balls ? r.runs / r.balls * 6 : null) }, { h: 'Dots', k: 'dots' }, { h: '4s', k: 'fours' }, { h: '6s', k: 'sixes' }], i.phases.sort((a, b) => PHASE_ORDER(a.phase, b.phase))))}
-        ${box('Fall of wickets', table([{ h: 'Wkt', k: 'wn' }, { h: 'Score', k: 'score' }, { h: 'Over', k: 'ballno' }, { h: 'Batter', k: 'player_out', l: 1 }, { h: 'How', k: 'wkt_kind', l: 1 }, { h: 'Bowler', k: 'bowler', l: 1 }], i.fow))}
+        ${i.phases.length ? box('Phase by phase', table([{ h: 'Phase', k: 'phase', l: 1 }, { h: 'Runs', k: 'runs' }, { h: 'Wkts', k: 'wkts' }, { h: 'Run rate', f: (r) => f2(r.balls ? r.runs / r.balls * 6 : null) }, { h: 'Dots', k: 'dots' }, { h: '4s', k: 'fours' }, { h: '6s', k: 'sixes' }], i.phases.sort((a, b) => PHASE_ORDER(a.phase, b.phase)))) : ''}
+        ${i.fow.length ? box('Fall of wickets', table([{ h: 'Wkt', k: 'wn' }, { h: 'Score', k: 'score' }, { h: 'Over', k: 'ballno' }, { h: 'Batter', k: 'player_out', l: 1 }, { h: 'How', k: 'wkt_kind', l: 1 }, { h: 'Bowler', k: 'bowler', l: 1 }], i.fow)) : ''}
       </div>`;
   });
   app.innerHTML = h;
+  if (M.lite) return;
   const cols = ['#0f6b4f', '#c2410c', '#2563eb', '#7c3aed'];
   const maxOv = Math.max(...M.innings.map((i) => (i.overs.length ? i.overs[i.overs.length - 1].over : 0)));
   const labels = Array.from({ length: maxOv }, (_, k) => k + 1);
