@@ -23,18 +23,26 @@ def call(endpoint, **params):
     return j
 
 def series_span(srs):
+    """startDate comes as '2026-10-22' (sometimes 'Mar 14'); endDate as 'Dec 01'."""
     import re
-    y = re.search(r'(20\d\d)', srs.get('name') or '')
+    def parse(x, year):
+        for f, v in (('%Y-%m-%d', x), ('%b %d %Y', f'{x} {year}')):
+            try:
+                return datetime.datetime.strptime(v, f).date()
+            except Exception:
+                pass
+        return None
+    y = re.search(r'(20\d\d)', (srs.get('startDate') or '') + ' ' + (srs.get('name') or ''))
     if not y:
         return None
-    y = int(y.group(1))
-    try:
-        st = datetime.datetime.strptime(f"{srs.get('startDate')} {y}", '%b %d %Y').date()
-        en = datetime.datetime.strptime(f"{srs.get('endDate')} {y}", '%b %d %Y').date()
-    except Exception:
+    st = parse(srs.get('startDate') or '', int(y.group(1)))
+    if not st or st.year < 2000:
+        return None
+    en = parse(srs.get('endDate') or '', st.year)
+    if not en:
         return None
     if en < st:
-        en = en.replace(year=y + 1)
+        en = en.replace(year=st.year + 1)
     return st, en
 
 def is_target(m):
