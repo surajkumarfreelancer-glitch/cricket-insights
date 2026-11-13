@@ -22,6 +22,21 @@ def call(endpoint, **params):
     print(f"{endpoint}: {j.get('status')} hits {info.get('hitsToday')}/{info.get('hitsLimit')}")
     return j
 
+def series_span(srs):
+    import re
+    y = re.search(r'(20\d\d)', srs.get('name') or '')
+    if not y:
+        return None
+    y = int(y.group(1))
+    try:
+        st = datetime.datetime.strptime(f"{srs.get('startDate')} {y}", '%b %d %Y').date()
+        en = datetime.datetime.strptime(f"{srs.get('endDate')} {y}", '%b %d %Y').date()
+    except Exception:
+        return None
+    if en < st:
+        en = en.replace(year=y + 1)
+    return st, en
+
 def is_target(m):
     teams = m.get('teams') or []
     return TEAM in teams and m.get('matchType') in TYPES and len(teams) == 2
@@ -39,20 +54,27 @@ def main():
         for m in (j.get('data') or []) if j.get('status') == 'success' else []:
             if is_target(m) and (m.get('date') or '') >= cutoff:
                 found[m['id']] = m
-        # 2) India's recent series (latest first) and every match in them
-        series = []
-        for off in (0, 25):
-            j = call('series', offset=off)
-            for srs in (j.get('data') or []) if j.get('status') == 'success' else []:
+        # 2) India's series whose dates overlap the last 30 days, then every match in them
+        today = datetime.date.today()
+        cands = {}
+        for off in (0, 25, 50):
+            j = call('series', offset=off, search=TEAM)
+            data = (j.get('data') or []) if j.get('status') == 'success' else []
+            for srs in data:
                 nm = srs.get('name') or ''
-                if TEAM in nm and 'Women' not in nm and ' A ' not in nm + ' ' and 'U19' not in nm:
-                    series.append(srs)
-        print('India series found:', [x.get('name') for x in series][:6])
-        for srs in series[:4]:
-            j = call('series_info', id=srs['id'], offset=0)
+                if TEAM not in nm or any(x in nm for x in ('Women', ' A ', 'U19', 'Under', 'Legends', 'Masters')):
+                    continue
+                span = series_span(srs)
+                if span and span[1] >= today - datetime.timedelta(days=DAYS_BACK) and span[0] <= today + datetime.timedelta(days=1):
+                    cands[srs['id']] = (span, nm)
+            if len(data) < 25:
+                break
+        print('India series in window:', [v[1] for v in cands.values()])
+        for sid, (span, nm) in sorted(cands.items(), key=lambda kv: kv[1][0][1], reverse=True)[:5]:
+            j = call('series_info', id=sid, offset=0)
             ml = ((j.get('data') or {}).get('matchList') or []) if j.get('status') == 'success' else []
             for m in ml:
-                if is_target(m) and cutoff <= (m.get('date') or '') <= datetime.date.today().isoformat():
+                if is_target(m) and cutoff <= (m.get('date') or '') <= today.isoformat():
                     found[m['id']] = m
     except Exception as e:
         print('list error', e)
