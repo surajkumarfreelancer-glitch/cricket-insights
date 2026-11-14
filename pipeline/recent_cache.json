@@ -1581,7 +1581,7 @@
   "in_cricsheet": true
  },
  "4cb54768-b317-42c6-bb7d-409dd2a6c862": {
-  "tries": 1,
+  "tries": 2,
   "match": {
    "id": "4cb54768-b317-42c6-bb7d-409dd2a6c862",
    "name": "New Zealand vs India, 3rd ODI, India tour of New Zealand 2026",
@@ -1641,7 +1641,7 @@
   "in_cricsheet": true
  },
  "c547eb46-2025-413a-b7f2-6d1584daa42f": {
-  "tries": 0,
+  "tries": 1,
   "match": {
    "id": "c547eb46-2025-413a-b7f2-6d1584daa42f",
    "name": "New Zealand vs India, 1st ODI, India tour of New Zealand 2026",
@@ -1658,7 +1658,708 @@
    "matchEnded": true,
    "matchStarted": true
   },
-  "in_cricsheet": false
+  "in_cricsheet": false,
+  "scorecard": [
+   {
+    "batting": [
+     {
+      "batsman": {
+       "id": "76f0901e-dc58-4641-a31a-f041a6b165c9",
+       "name": "Will Young",
+       "cricbuzz_id": "8549"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "607ff10c-5619-411d-a822-06ba28992230",
+       "name": "Arshdeep Singh",
+       "cricbuzz_id": "13217"
+      },
+      "catcher": {
+       "id": "77791963-6c1b-4979-b07a-f910dee28cd9",
+       "name": "Shreyas Iyer",
+       "cricbuzz_id": "9428"
+      },
+      "dismissal-text": "c Shreyas Iyer b Arshdeep Singh",
+      "r": 9,
+      "b": 11,
+      "4s": 2,
+      "6s": 0,
+      "sr": 81.82
+     },
+     {
+      "batsman": {
+       "id": "812fc568-a932-4f29-a1c4-b7c929e6a248",
+       "name": "Tim Seifert",
+       "cricbuzz_id": "9443"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "48da9a39-30d0-4b7d-9f61-44d221b653fa",
+       "name": "Gurnoor Brar",
+       "cricbuzz_id": "22141"
+      },
+      "catcher": {
+       "id": "50b70c71-1535-41c0-87fd-c12883105ede",
+       "name": "Ruturaj Gaikwad",
+       "cricbuzz_id": "11813"
+      },
+      "dismissal-text": "c (sub)Ruturaj Gaikwad b Gurnoor Brar",
+      "r": 38,
+      "b": 43,
+      "4s": 3,
+      "6s": 2,
+      "sr": 88.37
+     },
+     {
+      "batsman": {
+       "id": "ba49b04b-d9f0-4299-88fc-61e6ab3e13b7",
+       "name": "Henry Nicholls",
+       "cricbuzz_id": "10694"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "607ff10c-5619-411d-a822-06ba28992230",
+       "name": "Arshdeep Singh",
+       "cricbuzz_id": "13217"
+      },
+      "catcher": {
+       "id": "71add5ac-55f9-4eb7-9e0c-d51208ae20c0",
+       "name": "Naman Dhir",
+       "cricbuzz_id": "36139"
+      },
+      "dismissal-text": "c Naman Dhir b Arshdeep Singh",
+      "r": 9,
+      "b": 11,
+      "4s": 2,
+      "6s": 0,
+      "sr": 81.82
+     },
+     {
+      "batsman": {
+       "id": "f75212f8-37fb-4cf0-8f37-d681b4cb66b2",
+       "name": "Daryl Mitchell",
+       "cricbuzz_id": "10713"
+      },
+      "dismissal": "runout",
+      "bowler": {
+       "id": "b614b0cf-60b5-4f83-8947-3a9999af16d7",
+       "name": "Rohit Sharma",
+       "cricbuzz_id": "1475202"
+      },
+      "catcher": {
+       "id": "a034346c-b408-4d29-a0f0-8b12430be28e",
+       "name": "KL Rahul",
+       "cricbuzz_id": "8733"
+      },
+      "dismissal-text": "run out (Rohit Sharma/KL Rahul)",
+      "r": 28,
+      "b": 41,
+      "4s": 3,
+      "6s": 1,
+      "sr": 68.29
+     },
+     {
+      "batsman": {
+       "id": "05811a99-09ae-451e-8aa5-ec8cf0fa1aab",
+       "name": "Tom Latham",
+       "cricbuzz_id": "8216"
+      },
+      "dismissal": "cb",
+      "bowler": {
+       "id": "48da9a39-30d0-4b7d-9f61-44d221b653fa",
+       "name": "Gurnoor Brar",
+       "cricbuzz_id": "22141"
+      },
+      "dismissal-text": "c and b Gurnoor Brar",
+      "r": 3,
+      "b": 11,
+      "4s": 0,
+      "6s": 0,
+      "sr": 27.27
+     },
+     {
+      "batsman": {
+       "id": "9e6fa482-3ad3-4831-b05d-4fed2510cdf5",
+       "name": "Glenn Phillips",
+       "cricbuzz_id": "10693"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "607ff10c-5619-411d-a822-06ba28992230",
+       "name": "Arshdeep Singh",
+       "cricbuzz_id": "13217"
+      },
+      "catcher": {
+       "id": "77791963-6c1b-4979-b07a-f910dee28cd9",
+       "name": "Shreyas Iyer",
+       "cricbuzz_id": "9428"
+      },
+      "dismissal-text": "c Shreyas Iyer b Arshdeep Singh",
+      "r": 30,
+      "b": 51,
+      "4s": 2,
+      "6s": 1,
+      "sr": 58.82
+     },
+     {
+      "batsman": {
+       "id": "16ec245b-022d-4104-bd8f-ccc780428390",
+       "name": "Mitchell Santner",
+       "cricbuzz_id": "10100"
+      },
+      "dismissal": "bowled",
+      "bowler": {
+       "id": "cbe808da-727a-4d9c-b3be-6eb431217483",
+       "name": "Anshul Kamboj",
+       "cricbuzz_id": "14598"
+      },
+      "dismissal-text": "b Anshul Kamboj",
+      "r": 4,
+      "b": 16,
+      "4s": 0,
+      "6s": 0,
+      "sr": 25
+     },
+     {
+      "batsman": {
+       "id": "154cb364-06fa-49af-8359-a03ba0a86f3e",
+       "name": "Nathan Smith",
+       "cricbuzz_id": "13707"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "cbe808da-727a-4d9c-b3be-6eb431217483",
+       "name": "Anshul Kamboj",
+       "cricbuzz_id": "14598"
+      },
+      "catcher": {
+       "id": "c61d247d-7f77-452c-b495-2813a9cd0ac4",
+       "name": "Virat Kohli",
+       "cricbuzz_id": "1413"
+      },
+      "dismissal-text": "c Virat Kohli b Anshul Kamboj",
+      "r": 1,
+      "b": 9,
+      "4s": 0,
+      "6s": 0,
+      "sr": 11.11
+     },
+     {
+      "batsman": {
+       "id": "5673ee27-bf33-44b8-8973-41fd37923fed",
+       "name": "Kyle Jamieson",
+       "cricbuzz_id": "9441"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "607ff10c-5619-411d-a822-06ba28992230",
+       "name": "Arshdeep Singh",
+       "cricbuzz_id": "13217"
+      },
+      "catcher": {
+       "id": "c61d247d-7f77-452c-b495-2813a9cd0ac4",
+       "name": "Virat Kohli",
+       "cricbuzz_id": "1413"
+      },
+      "dismissal-text": "c Virat Kohli b Arshdeep Singh",
+      "r": 1,
+      "b": 6,
+      "4s": 0,
+      "6s": 0,
+      "sr": 16.67
+     },
+     {
+      "batsman": {
+       "id": "6e05cbea-6a4b-42ef-8e2e-b44e4b434c2f",
+       "name": "Jacob Duffy",
+       "cricbuzz_id": "8554"
+      },
+      "dismissal-text": "not out",
+      "r": 15,
+      "b": 21,
+      "4s": 3,
+      "6s": 0,
+      "sr": 71.43
+     },
+     {
+      "batsman": {
+       "id": "07667f24-cb41-4e01-b1e7-067120c638d7",
+       "name": "Blair Tickner",
+       "cricbuzz_id": "10730"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "48da9a39-30d0-4b7d-9f61-44d221b653fa",
+       "name": "Gurnoor Brar",
+       "cricbuzz_id": "22141"
+      },
+      "catcher": {
+       "id": "a034346c-b408-4d29-a0f0-8b12430be28e",
+       "name": "KL Rahul",
+       "cricbuzz_id": "8733"
+      },
+      "dismissal-text": "c KL Rahul b Gurnoor Brar",
+      "r": 34,
+      "b": 23,
+      "4s": 1,
+      "6s": 4,
+      "sr": 147.83
+     }
+    ],
+    "bowling": [
+     {
+      "bowler": {
+       "id": "607ff10c-5619-411d-a822-06ba28992230",
+       "name": "Arshdeep Singh",
+       "cricbuzz_id": "13217"
+      },
+      "o": 10,
+      "m": 0,
+      "r": 70,
+      "w": 4,
+      "nb": 0,
+      "wd": 2,
+      "eco": 7
+     },
+     {
+      "bowler": {
+       "id": "8fabee3c-244c-4ead-8f96-2ec79540d33f",
+       "name": "Auqib Nabi",
+       "cricbuzz_id": "14179"
+      },
+      "o": 6,
+      "m": 0,
+      "r": 33,
+      "w": 0,
+      "nb": 0,
+      "wd": 0,
+      "eco": 5.5
+     },
+     {
+      "bowler": {
+       "id": "cbe808da-727a-4d9c-b3be-6eb431217483",
+       "name": "Anshul Kamboj",
+       "cricbuzz_id": "14598"
+      },
+      "o": 10,
+      "m": 2,
+      "r": 22,
+      "w": 2,
+      "nb": 0,
+      "wd": 1,
+      "eco": 2.2
+     },
+     {
+      "bowler": {
+       "id": "48da9a39-30d0-4b7d-9f61-44d221b653fa",
+       "name": "Gurnoor Brar",
+       "cricbuzz_id": "22141"
+      },
+      "o": 9.2,
+      "m": 0,
+      "r": 44,
+      "w": 3,
+      "nb": 1,
+      "wd": 5,
+      "eco": 4.7
+     },
+     {
+      "bowler": {
+       "id": "670ae8ac-4fe9-4f0c-84ee-320b13039f34",
+       "name": "Axar Patel",
+       "cricbuzz_id": "8808"
+      },
+      "o": 5,
+      "m": 0,
+      "r": 12,
+      "w": 0,
+      "nb": 0,
+      "wd": 0,
+      "eco": 2.4
+     }
+    ],
+    "catching": [
+     {
+      "catcher": {
+       "id": "77791963-6c1b-4979-b07a-f910dee28cd9",
+       "name": "Shreyas Iyer",
+       "cricbuzz_id": "9428"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 2,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "catcher": {
+       "id": "50b70c71-1535-41c0-87fd-c12883105ede",
+       "name": "Ruturaj Gaikwad",
+       "cricbuzz_id": "11813"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 1,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "catcher": {
+       "id": "71add5ac-55f9-4eb7-9e0c-d51208ae20c0",
+       "name": "Naman Dhir",
+       "cricbuzz_id": "36139"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 1,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "catcher": {
+       "id": "a034346c-b408-4d29-a0f0-8b12430be28e",
+       "name": "KL Rahul",
+       "cricbuzz_id": "8733"
+      },
+      "stumped": 0,
+      "runout": 1,
+      "catch": 1,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "catcher": {
+       "id": "c61d247d-7f77-452c-b495-2813a9cd0ac4",
+       "name": "Virat Kohli",
+       "cricbuzz_id": "1413"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 2,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "stumped": 0,
+      "runout": 0,
+      "catch": 0,
+      "cb": 1,
+      "lbw": 0,
+      "bowled": 0,
+      "catcher": {
+       "id": "48da9a39-30d0-4b7d-9f61-44d221b653fa",
+       "name": "Gurnoor Brar",
+       "cricbuzz_id": "22141"
+      }
+     },
+     {
+      "stumped": 0,
+      "runout": 0,
+      "catch": 0,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 1,
+      "catcher": {
+       "id": "cbe808da-727a-4d9c-b3be-6eb431217483",
+       "name": "Anshul Kamboj",
+       "cricbuzz_id": "14598"
+      }
+     }
+    ],
+    "extras": {},
+    "totals": {},
+    "inning": "New Zealand Inning 1"
+   },
+   {
+    "batting": [
+     {
+      "batsman": {
+       "id": "b614b0cf-60b5-4f83-8947-3a9999af16d7",
+       "name": "Rohit Sharma",
+       "cricbuzz_id": "1475202"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "5673ee27-bf33-44b8-8973-41fd37923fed",
+       "name": "Kyle Jamieson",
+       "cricbuzz_id": "9441"
+      },
+      "catcher": {
+       "id": "16ec245b-022d-4104-bd8f-ccc780428390",
+       "name": "Mitchell Santner",
+       "cricbuzz_id": "10100"
+      },
+      "dismissal-text": "c Mitchell Santner b Kyle Jamieson",
+      "r": 0,
+      "b": 6,
+      "4s": 0,
+      "6s": 0,
+      "sr": 0
+     },
+     {
+      "batsman": {
+       "id": "7263e990-a9e9-4829-8adf-760d18d1315c",
+       "name": "Shubman Gill",
+       "cricbuzz_id": "11808"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "154cb364-06fa-49af-8359-a03ba0a86f3e",
+       "name": "Nathan Smith",
+       "cricbuzz_id": "13707"
+      },
+      "catcher": {
+       "id": "05811a99-09ae-451e-8aa5-ec8cf0fa1aab",
+       "name": "Tom Latham",
+       "cricbuzz_id": "8216"
+      },
+      "dismissal-text": "c Tom Latham b Nathan Smith",
+      "r": 37,
+      "b": 56,
+      "4s": 5,
+      "6s": 0,
+      "sr": 66.07
+     },
+     {
+      "batsman": {
+       "id": "c61d247d-7f77-452c-b495-2813a9cd0ac4",
+       "name": "Virat Kohli",
+       "cricbuzz_id": "1413"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "6e05cbea-6a4b-42ef-8e2e-b44e4b434c2f",
+       "name": "Jacob Duffy",
+       "cricbuzz_id": "8554"
+      },
+      "catcher": {
+       "id": "812fc568-a932-4f29-a1c4-b7c929e6a248",
+       "name": "Tim Seifert",
+       "cricbuzz_id": "9443"
+      },
+      "dismissal-text": "c Tim Seifert b Jacob Duffy",
+      "r": 74,
+      "b": 51,
+      "4s": 13,
+      "6s": 1,
+      "sr": 145.1
+     },
+     {
+      "batsman": {
+       "id": "77791963-6c1b-4979-b07a-f910dee28cd9",
+       "name": "Shreyas Iyer",
+       "cricbuzz_id": "9428"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "6e05cbea-6a4b-42ef-8e2e-b44e4b434c2f",
+       "name": "Jacob Duffy",
+       "cricbuzz_id": "8554"
+      },
+      "catcher": {
+       "id": "ba49b04b-d9f0-4299-88fc-61e6ab3e13b7",
+       "name": "Henry Nicholls",
+       "cricbuzz_id": "10694"
+      },
+      "dismissal-text": "c Henry Nicholls b Jacob Duffy",
+      "r": 15,
+      "b": 13,
+      "4s": 1,
+      "6s": 1,
+      "sr": 115.38
+     },
+     {
+      "batsman": {
+       "id": "670ae8ac-4fe9-4f0c-84ee-320b13039f34",
+       "name": "Axar Patel",
+       "cricbuzz_id": "8808"
+      },
+      "dismissal": "catch",
+      "bowler": {
+       "id": "6e05cbea-6a4b-42ef-8e2e-b44e4b434c2f",
+       "name": "Jacob Duffy",
+       "cricbuzz_id": "8554"
+      },
+      "catcher": {
+       "id": "9e6fa482-3ad3-4831-b05d-4fed2510cdf5",
+       "name": "Glenn Phillips",
+       "cricbuzz_id": "10693"
+      },
+      "dismissal-text": "c Glenn Phillips b Jacob Duffy",
+      "r": 0,
+      "b": 2,
+      "4s": 0,
+      "6s": 0,
+      "sr": 0
+     },
+     {
+      "batsman": {
+       "id": "a034346c-b408-4d29-a0f0-8b12430be28e",
+       "name": "KL Rahul",
+       "cricbuzz_id": "8733"
+      },
+      "dismissal-text": "not out",
+      "r": 3,
+      "b": 5,
+      "4s": 0,
+      "6s": 0,
+      "sr": 60
+     },
+     {
+      "batsman": {
+       "id": "71add5ac-55f9-4eb7-9e0c-d51208ae20c0",
+       "name": "Naman Dhir",
+       "cricbuzz_id": "36139"
+      },
+      "dismissal-text": "not out",
+      "r": 5,
+      "b": 3,
+      "4s": 1,
+      "6s": 0,
+      "sr": 166.67
+     }
+    ],
+    "bowling": [
+     {
+      "bowler": {
+       "id": "5673ee27-bf33-44b8-8973-41fd37923fed",
+       "name": "Kyle Jamieson",
+       "cricbuzz_id": "9441"
+      },
+      "o": 7,
+      "m": 0,
+      "r": 34,
+      "w": 1,
+      "nb": 0,
+      "wd": 6,
+      "eco": 4.9
+     },
+     {
+      "bowler": {
+       "id": "6e05cbea-6a4b-42ef-8e2e-b44e4b434c2f",
+       "name": "Jacob Duffy",
+       "cricbuzz_id": "8554"
+      },
+      "o": 7,
+      "m": 0,
+      "r": 49,
+      "w": 3,
+      "nb": 0,
+      "wd": 2,
+      "eco": 7
+     },
+     {
+      "bowler": {
+       "id": "07667f24-cb41-4e01-b1e7-067120c638d7",
+       "name": "Blair Tickner",
+       "cricbuzz_id": "10730"
+      },
+      "o": 4,
+      "m": 0,
+      "r": 38,
+      "w": 0,
+      "nb": 0,
+      "wd": 0,
+      "eco": 9.5
+     },
+     {
+      "bowler": {
+       "id": "154cb364-06fa-49af-8359-a03ba0a86f3e",
+       "name": "Nathan Smith",
+       "cricbuzz_id": "13707"
+      },
+      "o": 4.4,
+      "m": 0,
+      "r": 21,
+      "w": 1,
+      "nb": 0,
+      "wd": 0,
+      "eco": 4.5
+     }
+    ],
+    "catching": [
+     {
+      "catcher": {
+       "id": "16ec245b-022d-4104-bd8f-ccc780428390",
+       "name": "Mitchell Santner",
+       "cricbuzz_id": "10100"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 1,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "catcher": {
+       "id": "05811a99-09ae-451e-8aa5-ec8cf0fa1aab",
+       "name": "Tom Latham",
+       "cricbuzz_id": "8216"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 1,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "catcher": {
+       "id": "812fc568-a932-4f29-a1c4-b7c929e6a248",
+       "name": "Tim Seifert",
+       "cricbuzz_id": "9443"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 1,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "catcher": {
+       "id": "ba49b04b-d9f0-4299-88fc-61e6ab3e13b7",
+       "name": "Henry Nicholls",
+       "cricbuzz_id": "10694"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 1,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     },
+     {
+      "catcher": {
+       "id": "9e6fa482-3ad3-4831-b05d-4fed2510cdf5",
+       "name": "Glenn Phillips",
+       "cricbuzz_id": "10693"
+      },
+      "stumped": 0,
+      "runout": 0,
+      "catch": 1,
+      "cb": 0,
+      "lbw": 0,
+      "bowled": 0
+     }
+    ],
+    "extras": {},
+    "totals": {},
+    "inning": "India Inning 1"
+   }
+  ],
+  "toss": [
+   "india",
+   "bowl"
+  ],
+  "winner": "India",
+  "final": true
  },
  "2445a90a-eef7-467e-8cb6-75c4203a8e2c": {
   "tries": 0,
