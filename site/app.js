@@ -17,7 +17,8 @@ const isSpin = (t) => /spin|orthodox/i.test(t || '');
 function chart(canvas, cfg) {
   if (!window.Chart) return;
   const ink = css('--muted'), line = css('--line');
-  Chart.defaults.color = ink; Chart.defaults.borderColor = line; Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+  Chart.defaults.color = ink; Chart.defaults.borderColor = line; Chart.defaults.font.family = 'Figtree, system-ui, sans-serif';
+  Chart.defaults.elements.bar.borderRadius = 6; Chart.defaults.elements.line.borderWidth = 3; Chart.defaults.elements.point.radius = 3;
   cfg.options = Object.assign({ responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 12 } } } }, cfg.options || {});
   charts.push(new Chart(canvas, cfg));
 }
@@ -90,9 +91,12 @@ async function home() {
   const topT = INDEX.filter((e) => e.t === 't').sort((a, b) => b.w - a.w).slice(0, 14);
   app.innerHTML = `
   <section class="home-hero">
-    <h1>Search any player, ground, team or match</h1>
-    <p class="sub">How every pitch plays, which bowlers take wickets there, how each batter gets out, and full match reviews. Updated every week.</p>
-    <div class="chips">${['Virat Kohli', 'Jasprit Bumrah', 'Chinnaswamy', 'Wankhede', 'IND vs NZ', 'SA vs AUS', 'Rashid Khan', 'Eden Gardens'].map((s) => `<a href="#" data-q="${esc(s)}">${esc(s)}</a>`).join('')}</div>
+    <div>
+      <h1>Every ground, player and match.<span class="l2">Read the pitch.</span></h1>
+      <p class="sub">See how each pitch plays, which bowlers take wickets there, how every batter gets out, and full match reviews. Updated twice a day.</p>
+      <div class="chips">${['Virat Kohli', 'Jasprit Bumrah', 'Chinnaswamy', 'Wankhede', 'IND vs NZ', 'Smriti Mandhana', 'Rashid Khan', 'Eden Gardens'].map((s) => `<a href="#" data-q="${esc(s)}">${esc(s)}</a>`).join('')}</div>
+    </div>
+    <div class="pitch" aria-hidden="true"><div class="strip"></div><div class="crease a"></div><div class="crease b"></div><div class="stumps a"></div><div class="stumps b"></div><div class="rb"></div></div>
   </section>
   <div class="grid2">
     ${box('Latest matches', `<div class="list">${latest.map((e) => `<a class="row" href="#/m/${esc(e.id)}"><span><b>${esc(e.n)}</b></span><span class="sub">${esc(e.s)}</span></a>`).join('')}</div>`)}
@@ -151,10 +155,10 @@ async function player(id, fmt) {
     setTimeout(() => {
       const yr = B.by_year || [];
       chart($('#c-byr'), { type: 'bar', data: { labels: yr.map((r) => r.yr), datasets: [{ label: 'Runs', data: yr.map((r) => r.runs), backgroundColor: css('--accent'), yAxisID: 'y' }, { type: 'line', label: 'Average', data: yr.map((r) => r.avg), borderColor: css('--accent2'), backgroundColor: css('--accent2'), tension: 0, yAxisID: 'y1' }] }, options: { scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: { display: false } } } } });
-      chart($('#c-kind'), { type: 'doughnut', data: { labels: kinds.map((k) => k[0]), datasets: [{ data: kinds.map((k) => k[1]), backgroundColor: ['#0f6b4f', '#c2410c', '#2563eb', '#7c3aed', '#ca8a04', '#64748b', '#db2777'] }] }, options: { plugins: { legend: { position: 'right' } } } });
+      chart($('#c-kind'), { type: 'doughnut', data: { labels: kinds.map((k) => k[0]), datasets: [{ data: kinds.map((k) => k[1]), backgroundColor: ['#2ee6a6', '#ff8a1f', '#4d8dff', '#c06bff', '#ffd23f', '#8f9bd0', '#ff4f9a'] }] }, options: { plugins: { legend: { position: 'right' } } } });
       chart($('#c-ph'), { type: 'bar', data: { labels: phases.map((r) => r.phase), datasets: [{ label: 'Dismissals', data: phases.map((r) => r.outs), backgroundColor: css('--accent2'), yAxisID: 'y' }, { type: 'line', label: 'Strike rate', data: phases.map((r) => r.balls ? r.runs / r.balls * 100 : null), borderColor: css('--accent'), backgroundColor: css('--accent'), yAxisID: 'y1' }] }, options: { scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: { display: false } } } } });
       const vv = vs.filter((r) => r.bpd).sort((a, b) => a.bpd - b.bpd);
-      chart($('#c-vs'), { type: 'bar', data: { labels: vv.map((r) => r.bowl_type), datasets: [{ label: 'Balls per dismissal', data: vv.map((r) => r.bpd), backgroundColor: vv.map((r) => (isSpin(r.bowl_type) ? '#7c3aed' : '#0f6b4f')) }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
+      chart($('#c-vs'), { type: 'bar', data: { labels: vv.map((r) => r.bowl_type), datasets: [{ label: 'Balls per dismissal', data: vv.map((r) => r.bpd), backgroundColor: vv.map((r) => (isSpin(r.bowl_type) ? '#c06bff' : '#2ee6a6')) }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
     });
   }
   if (W && W.balls >= 6) {
@@ -178,7 +182,7 @@ async function player(id, fmt) {
       const yr = W.by_year || [];
       chart($('#c-wyr'), { type: 'bar', data: { labels: yr.map((r) => r.yr), datasets: [{ label: 'Wickets', data: yr.map((r) => r.wkts), backgroundColor: css('--accent'), yAxisID: 'y' }, { type: 'line', label: 'Economy', data: yr.map((r) => r.econ), borderColor: css('--accent2'), backgroundColor: css('--accent2'), yAxisID: 'y1' }] }, options: { scales: { y: { beginAtZero: true }, y1: { position: 'right', grid: { display: false } } } } });
       chart($('#c-wph'), { type: 'bar', data: { labels: ph.map((r) => r.phase), datasets: [{ label: 'Wickets', data: ph.map((r) => r.wkts), backgroundColor: css('--accent'), yAxisID: 'y' }, { type: 'line', label: 'Economy', data: ph.map((r) => r.balls ? r.runs / r.balls * 6 : null), borderColor: css('--accent2'), backgroundColor: css('--accent2'), yAxisID: 'y1' }] }, options: { scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: { display: false } } } } });
-      chart($('#c-wk'), { type: 'doughnut', data: { labels: kinds.map((k) => k.wkt_kind), datasets: [{ data: kinds.map((k) => k.n), backgroundColor: ['#0f6b4f', '#c2410c', '#2563eb', '#7c3aed', '#ca8a04', '#64748b'] }] }, options: { plugins: { legend: { position: 'right' } } } });
+      chart($('#c-wk'), { type: 'doughnut', data: { labels: kinds.map((k) => k.wkt_kind), datasets: [{ data: kinds.map((k) => k.n), backgroundColor: ['#2ee6a6', '#ff8a1f', '#4d8dff', '#c06bff', '#ffd23f', '#8f9bd0'] }] }, options: { plugins: { legend: { position: 'right' } } } });
     });
   }
   $('#body').innerHTML = h || '<p class="sub">No batting or bowling recorded in this format.</p>';
@@ -238,11 +242,11 @@ async function ground(id, fmt, per) {
     <h2>Recent matches here</h2>${box('', `<div class="list">${F.recent.map((r) => `<a class="row" href="#/m/${esc(r.id)}"><span><b>${esc(r.t)}</b> · ${dt(r.date)}</span><span class="sub">${esc(r.s)}${r.w ? ` · ${esc(r.w)} won` : ''}</span></a>`).join('')}</div>`)}`;
   $('#body').innerHTML = h;
   const yr = F.by_year || [];
-  chart($('#c-yr'), { type: 'line', data: { labels: yr.map((r) => r.year), datasets: [{ label: '1st innings', data: yr.map((r) => r.avg1), borderColor: '#0f6b4f', backgroundColor: '#0f6b4f' }, { label: '2nd innings', data: yr.map((r) => r.avg2), borderColor: '#c2410c', backgroundColor: '#c2410c' }] } });
-  chart($('#c-bf'), { type: 'bar', data: { labels: yr.map((r) => r.year), datasets: [{ label: 'Bat 1st win %', data: yr.map((r) => r.bat1_win_pct), backgroundColor: '#2563eb' }] }, options: { scales: { y: { min: 0, max: 100 } } } });
-  chart($('#c-bt'), { type: 'bar', data: { labels: bt.map((r) => r['Bowler type']), datasets: [{ label: 'Share of wickets %', data: bt.map((r) => r['Share of wkts %']), backgroundColor: bt.map((r) => (r['Pace/Spin'] === 'Spin' ? '#7c3aed' : '#0f6b4f')) }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
+  chart($('#c-yr'), { type: 'line', data: { labels: yr.map((r) => r.year), datasets: [{ label: '1st innings', data: yr.map((r) => r.avg1), borderColor: '#2ee6a6', backgroundColor: '#2ee6a6' }, { label: '2nd innings', data: yr.map((r) => r.avg2), borderColor: '#ff8a1f', backgroundColor: '#ff8a1f' }] } });
+  chart($('#c-bf'), { type: 'bar', data: { labels: yr.map((r) => r.year), datasets: [{ label: 'Bat 1st win %', data: yr.map((r) => r.bat1_win_pct), backgroundColor: '#4d8dff' }] }, options: { scales: { y: { min: 0, max: 100 } } } });
+  chart($('#c-bt'), { type: 'bar', data: { labels: bt.map((r) => r['Bowler type']), datasets: [{ label: 'Share of wickets %', data: bt.map((r) => r['Share of wkts %']), backgroundColor: bt.map((r) => (r['Pace/Spin'] === 'Spin' ? '#c06bff' : '#2ee6a6')) }] }, options: { indexAxis: 'y', plugins: { legend: { display: false } } } });
   const labels = [...new Set(phases.map((r) => `Inns ${r.Innings} ${r.Phase.split(' (')[0]}`))];
-  chart($('#c-ph'), { type: 'bar', data: { labels, datasets: [{ label: 'Avg runs', data: phases.map((r) => r['Avg runs in phase']), backgroundColor: '#0f6b4f', yAxisID: 'y' }, { type: 'line', label: 'Avg wickets', data: phases.map((r) => r['Avg wkts in phase']), borderColor: '#c2410c', backgroundColor: '#c2410c', yAxisID: 'y1' }] }, options: { scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: { display: false } } } } });
+  chart($('#c-ph'), { type: 'bar', data: { labels, datasets: [{ label: 'Avg runs', data: phases.map((r) => r['Avg runs in phase']), backgroundColor: '#2ee6a6', yAxisID: 'y' }, { type: 'line', label: 'Avg wickets', data: phases.map((r) => r['Avg wkts in phase']), borderColor: '#ff8a1f', backgroundColor: '#ff8a1f', yAxisID: 'y1' }] }, options: { scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true, grid: { display: false } } } } });
 }
 
 /* ----- team ----- */
@@ -265,7 +269,7 @@ async function team(id, fmt) {
     <h2>Record at grounds (last 10 years)</h2>${box('', table([{ h: 'Ground', l: 1, html: (r) => `<a href="#/g/${esc(slugify(r.Venue))}/${fmt}">${esc(r.Venue)}</a>` }, { h: 'Played', k: 'Played' }, { h: 'Won', k: 'Won' }, { h: 'Win %', f: (r) => f1(r['Win %']) }, { h: 'Bat 1st P/W', f: (r) => `${r['Batting 1st P']}/${r['Batting 1st W']}` }, { h: 'Bat 2nd P/W', f: (r) => `${r['Batting 2nd P']}/${r['Batting 2nd W']}` }], F.grounds))}
     <h2>Recent matches</h2>${box('', table([{ h: 'Date', l: 1, html: (r) => mlink(dt(r.date), r.id) }, { h: 'Opponent', k: 'opp', l: 1 }, { h: 'Ground', k: 'venue', l: 1 }, { h: 'Result', html: (r) => resPill(r.res) }], F.recent))}`;
   const yr = F.by_year || [];
-  chart($('#c-yr'), { type: 'bar', data: { labels: yr.map((r) => r.year), datasets: [{ label: 'Won', data: yr.map((r) => r.won), backgroundColor: '#16a34a' }, { label: 'Lost', data: yr.map((r) => r.lost), backgroundColor: '#dc2626' }] }, options: { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
+  chart($('#c-yr'), { type: 'bar', data: { labels: yr.map((r) => r.year), datasets: [{ label: 'Won', data: yr.map((r) => r.won), backgroundColor: '#2ee6a6' }, { label: 'Lost', data: yr.map((r) => r.lost), backgroundColor: '#ff5470' }] }, options: { scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
 }
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -295,11 +299,11 @@ async function match(id) {
   });
   app.innerHTML = h;
   if (M.lite) return;
-  const cols = ['#0f6b4f', '#c2410c', '#2563eb', '#7c3aed'];
+  const cols = ['#2ee6a6', '#ff8a1f', '#4d8dff', '#c06bff'];
   const maxOv = Math.max(...M.innings.map((i) => (i.overs.length ? i.overs[i.overs.length - 1].over : 0)));
   const labels = Array.from({ length: maxOv }, (_, k) => k + 1);
   if ($('#c-worm')) chart($('#c-worm'), { type: 'line', data: { labels, datasets: M.innings.map((i, k) => ({ label: i.team, data: labels.map((o) => (i.overs.find((x) => x.over === o) || {}).cum ?? null), borderColor: cols[k], backgroundColor: cols[k], pointRadius: labels.map((o) => ((i.overs.find((x) => x.over === o) || {}).wkts ? 4 : 0)), spanGaps: false })) } });
-  chart($('#c-man'), { type: 'bar', data: { labels, datasets: M.innings.map((i, k) => ({ label: `${i.team} (inns ${i.n})`, data: labels.map((o) => (i.overs.find((x) => x.over === o) || {}).runs ?? null), backgroundColor: cols[k] })).concat(M.innings.map((i, k) => ({ type: 'scatter', label: `${i.team} wickets`, data: i.overs.filter((x) => x.wkts).map((x) => ({ x: x.over - 1, y: x.runs + 1 })), backgroundColor: '#111', pointRadius: 4, showLine: false }))) }, options: { plugins: { legend: { labels: { filter: (l) => !/wickets$/.test(l.text) } } } } });
+  chart($('#c-man'), { type: 'bar', data: { labels, datasets: M.innings.map((i, k) => ({ label: `${i.team} (inns ${i.n})`, data: labels.map((o) => (i.overs.find((x) => x.over === o) || {}).runs ?? null), backgroundColor: cols[k] })).concat(M.innings.map((i, k) => ({ type: 'scatter', label: `${i.team} wickets`, data: i.overs.filter((x) => x.wkts).map((x) => ({ x: x.over - 1, y: x.runs + 1 })), backgroundColor: '#ffffff', pointRadius: 4, showLine: false }))) }, options: { plugins: { legend: { labels: { filter: (l) => !/wickets$/.test(l.text) } } } } });
 }
 
 /* ----- methods & sources ----- */
@@ -333,6 +337,7 @@ async function about() {
 async function route() {
   charts.splice(0).forEach((c) => c.destroy());
   const [, type, id, a, b] = decodeURIComponent(location.hash || '#/').split('/');
+  document.body.dataset.page = type || 'home';
   window.scrollTo(0, 0);
   try {
     if (type === 'p') await player(id, a);
