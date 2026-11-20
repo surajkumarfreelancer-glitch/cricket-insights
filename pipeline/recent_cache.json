@@ -3333,7 +3333,7 @@
    "id": "163a0512-5f23-4446-b450-fa888e36038e",
    "name": "New Zealand vs India, 1st Test, India tour of New Zealand 2026",
    "matchType": "test",
-   "status": "Day 1: Stumps - India opt to bowl",
+   "status": "Day 2: Stumps - India trail by 209 runs",
    "venue": "Basin Reserve, Wellington",
    "date": "2026-11-19",
    "dateTimeGMT": "2026-11-19T22:00:00",
@@ -3343,7 +3343,7 @@
    ],
    "score": null,
    "matchEnded": false,
-   "matchStarted": false
+   "matchStarted": true
   },
   "in_cricsheet": false
  }
