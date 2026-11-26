@@ -194,12 +194,12 @@ async function ground(id, fmt, per) {
   const fmts = Object.keys(G.formats);
   fmt = fmts.includes(fmt) ? fmt : pickFormat(G.formats, (x) => x.matches);
   const F = G.formats[fmt];
-  const pers = ['Last 5 years', 'Last 10 years', 'All years'].filter((p) => F.periods[p]);
-  per = pers.includes(per) ? per : pers[0];
+  const pers = ['Last 5 matches', 'Last 10 matches', 'Last 5 years', 'Last 10 years', 'All years'].filter((p) => F.periods[p]);
+  per = pers.includes(per) ? per : (pers.find((p) => p.endsWith('years')) || pers[0]);
   const P = F.periods[per], S = P.summary;
   const test = isTest(fmt);
   app.innerHTML = `<h1>${esc(G.name)}</h1><p class="sub">${esc(G.city || '')} · ${F.matches} ${fmt} matches, ${dt(F.first)} to ${dt(F.last)}</p><div id="ft"></div>
-    <div class="seg" id="per">${pers.map((p) => `<button class="${p === per ? 'on' : ''}" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div><div id="body"></div>`;
+    <div class="seg" id="per">${pers.map((p) => `<button class="${p === per ? 'on' : ''}" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>${per.endsWith('matches') ? `<p class="note">Showing the ${S.Matches} most recent ${fmt} matches at this ground, ${dt(S.First)} to ${dt(S.Last)}. Small samples: treat as current form, not a long-term trend.</p>` : ''}<div id="body"></div>`;
   $('#ft').appendChild(formatTabs(fmts, fmt, (f) => { location.hash = `#/g/${id}/${f}`; }));
   app.querySelectorAll('#per button').forEach((b) => (b.onclick = () => { location.hash = `#/g/${id}/${fmt}/${encodeURIComponent(b.dataset.p)}`; }));
   const mw = P.most_wkts_phase;
@@ -315,7 +315,7 @@ async function about() {
   <h2>Sources</h2>${box('', `<ul>${(meta.sources || []).map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>: ${esc(s.use)}</li>`).join('')}</ul>`)}
   <h2>Data coverage</h2>${box('', table([{ h: 'Format', l: 1, f: (r) => r[0] }, { h: 'Matches', f: (r) => r[1].matches }, { h: 'From', f: (r) => dt(r[1].first) }, { h: 'Latest match', f: (r) => dt(r[1].last) }, { h: 'Decided', f: (r) => r[1].decided ?? '–' }, { h: 'Ties', f: (r) => r[1].ties ?? '–' }, { h: 'No results', f: (r) => r[1].no_results ?? '–' }, { h: 'Draws', f: (r) => r[1].draws ?? '–' }, { h: 'Shortened', f: (r) => r[1].shortened ?? '–' }, { h: 'Balls', f: (r) => n0(r[1].balls) }, { h: 'Bowler style known', f: (r) => (r[1].styled_balls_pct ?? '–') + '%' }], rows))}
   <h2>What is tracked</h2>${box('', `<div class="scroll"><table><thead><tr><th>Statistic</th><th class="l">Status</th><th class="l">How it is calculated</th></tr></thead><tbody>
-    ${T('Matches played', 'Tracked', 'Every match in the data at that ground, format and period (all years, last 10, last 5).')}
+    ${T('Matches played', 'Tracked', 'Every match in the data at that ground, format and period (all years, last 10 years, last 5 years, last 10 matches, last 5 matches).')}
     ${T('Won batting first / second', 'Tracked', 'Counts of matches won by the side that batted first / second. In Tests the side batting first is whoever batted in innings 1, follow-ons included.')}
     ${T('Batting first / second win %', 'Tracked', 'Wins ÷ decided matches (a side won). Ties, no results and draws are not in the denominator. Tests also show batting-first wins ÷ all matches.')}
     ${T('Ties, draws, no results', 'Tracked', 'Counted from the official result. A tie settled by a super over is counted as a tie.')}

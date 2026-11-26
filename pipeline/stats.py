@@ -34,9 +34,15 @@ def load(key):
     return m, d
 
 def periods(m):
+    """Period name -> the matches it covers. Year periods cut on the latest date in the format;
+    'Last N matches' takes each ground's own N most recent matches."""
     last = m.date.max()
-    return {'All years': m.date.min(), 'Last 10 years': last - pd.DateOffset(years=10),
-            'Last 5 years': last - pd.DateOffset(years=5)}
+    out = {'All years': m, 'Last 10 years': m[m.date >= last - pd.DateOffset(years=10)],
+           'Last 5 years': m[m.date >= last - pd.DateOffset(years=5)]}
+    srt = m.sort_values(['date', 'match_id'])
+    for n in (10, 5):
+        out[f'Last {n} matches'] = srt.groupby('venue', group_keys=False).tail(n)
+    return out
 
 def base(fmt):
     return 'T20' if ('T20' in fmt or fmt == 'IPL') else ('ODI' if 'ODI' in fmt else 'Test')
@@ -51,8 +57,7 @@ def venue_summary(m, d, fmt):
     test = base(fmt) == 'Test'
     wk_all = d[(d.bowler_wkt == 1) & (d.bowl_group != 'Unknown')]
     SPIN_BASE[fmt] = (wk_all.bowl_group == 'Spin').mean() * 100 if len(wk_all) else 33
-    for pname, start in periods(m).items():
-        mm = m[m.date >= start]
+    for pname, mm in periods(m).items():
         for v, g in mm.groupby('venue'):
             if len(g) < MIN_MATCHES[fmt]:
                 continue
@@ -100,7 +105,7 @@ def venue_summary(m, d, fmt):
             tw = g[g.toss_winner.notna() & g.winner.notna()]
             r['Toss winner wins %'] = r1((tw.toss_winner == tw.winner).mean() * 100) if len(tw) else None
             r['Toss: chose to bat %'] = r1((g.toss_decision == 'bat').mean() * 100)
-            dv = d[(d.venue == v) & (d.date >= start)]
+            dv = d[d.match_id.isin(g.match_id)]
             wk = dv[dv.bowler_wkt == 1]
             tot = int((wk.bowl_group != 'Unknown').sum())
             r['Styled wkts'] = tot
@@ -146,8 +151,8 @@ def pitch_read(r, fmt):
 
 def venue_phase(m, d, fmt):
     rows = []
-    for pname, start in periods(m).items():
-        x = d[d.date >= start]
+    for pname, mm in periods(m).items():
+        x = d[d.match_id.isin(mm.match_id)]
         if base(fmt) != 'Test':  # shortened (rain/DLS) and no-result games distort stage averages
             bad = set(m[m.shortened.fillna(False) | (m.result == 'no result')].match_id)
             x = x[~x.match_id.isin(bad)]
@@ -181,8 +186,8 @@ def venue_phase(m, d, fmt):
 
 def venue_bowler_type(m, d, fmt):
     rows = []
-    for pname, start in periods(m).items():
-        x = d[(d.date >= start) & (d.bowl_type != 'Unknown')]
+    for pname, mm in periods(m).items():
+        x = d[d.match_id.isin(mm.match_id) & (d.bowl_type != 'Unknown')]
         keep = x.groupby('venue').match_id.nunique()
         x = x[x.venue.isin(keep[keep >= MIN_MATCHES[fmt]].index)]
         g = x.groupby(['venue', 'bowl_group', 'bowl_type']).agg(balls=('legal', 'sum'), runs=('runs_total', 'sum'),
