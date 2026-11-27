@@ -4476,5 +4476,25 @@
   ],
   "winner": "No Winner",
   "final": true
+ },
+ "c81e7d49-463b-478a-bc28-06608c6466d2": {
+  "tries": 0,
+  "match": {
+   "id": "c81e7d49-463b-478a-bc28-06608c6466d2",
+   "name": "New Zealand vs India, 2nd Test, India tour of New Zealand 2026",
+   "matchType": "test",
+   "status": "Day 2: 1st Session - India opt to bowl",
+   "venue": "Hagley Oval, Christchurch",
+   "date": "2026-11-27",
+   "dateTimeGMT": "2026-11-27T22:00:00",
+   "teams": [
+    "New Zealand",
+    "India"
+   ],
+   "score": null,
+   "matchEnded": false,
+   "matchStarted": true
+  },
+  "in_cricsheet": false
  }
 }
